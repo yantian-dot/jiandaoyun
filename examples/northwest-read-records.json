@@ -1,0 +1,13 @@
+{
+  "tool": "jdy_northwest_read_records",
+  "arguments": {
+    "app_query": "中卫",
+    "form_query": "工作日志",
+    "field_labels": [
+      "工作内容",
+      "负责人",
+      "完成情况"
+    ],
+    "limit": 20
+  }
+}

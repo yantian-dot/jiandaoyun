@@ -1,0 +1,6 @@
+{
+  "tool": "jdy_openclaw_doctor",
+  "arguments": {
+    "probe": true
+  }
+}

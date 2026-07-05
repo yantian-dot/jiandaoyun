@@ -1,0 +1,8 @@
+{
+  "tool": "jdy_entry_list",
+  "arguments": {
+    "app_id": "replace_with_app_id",
+    "limit": 100,
+    "skip": 0
+  }
+}

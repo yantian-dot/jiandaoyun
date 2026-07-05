@@ -1,0 +1,13 @@
+{
+  "tool": "jdy_assistant_read_records",
+  "arguments": {
+    "app_id": "your_app_id",
+    "entry_id": "your_entry_id",
+    "field_labels": [
+      "工作内容",
+      "负责人",
+      "完成情况"
+    ],
+    "limit": 20
+  }
+}

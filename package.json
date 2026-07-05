@@ -1,0 +1,40 @@
+{
+  "name": "jiandaoyun-mcp-plugin",
+  "version": "0.5.2",
+  "description": "OpenClaw-oriented Jiandaoyun MCP plugin with northwest-company tools, schema cache, and install helpers.",
+  "type": "module",
+  "bin": {
+    "jiandaoyun-mcp": "./dist/index.js",
+    "jiandaoyun-openclaw": "./dist/openclaw-cli.js"
+  },
+  "files": [
+    "dist",
+    ".codex-plugin",
+    ".mcp.json",
+    ".env.example",
+    "README.md",
+    "OPENCLAW_INSTALL.md",
+    "references",
+    "examples",
+    "openclaw",
+    "docs",
+    "scripts"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.10",
+    "typescript": "^5.8.3",
+    "vitest": "^3.2.4"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "license": "MIT"
+}

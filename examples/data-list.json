@@ -1,0 +1,24 @@
+{
+  "tool": "jdy_data_list",
+  "arguments": {
+    "app_id": "replace_with_app_id",
+    "entry_id": "replace_with_entry_id",
+    "limit": 10,
+    "fields": [
+      "_widget_1508400000001"
+    ],
+    "filter": {
+      "rel": "and",
+      "cond": [
+        {
+          "field": "flowState",
+          "type": "flowstate",
+          "method": "eq",
+          "value": [
+            0
+          ]
+        }
+      ]
+    }
+  }
+}

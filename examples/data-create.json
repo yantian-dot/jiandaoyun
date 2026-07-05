@@ -1,0 +1,17 @@
+{
+  "tool": "jdy_data_create",
+  "arguments": {
+    "app_id": "replace_with_app_id",
+    "entry_id": "replace_with_entry_id",
+    "data": {
+      "_widget_1432728651402": {
+        "value": "示例文本"
+      },
+      "_widget_1432728651403": {
+        "value": 100
+      }
+    },
+    "is_start_workflow": false,
+    "is_start_trigger": false
+  }
+}

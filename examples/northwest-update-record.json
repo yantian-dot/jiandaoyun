@@ -1,0 +1,11 @@
+{
+  "tool": "jdy_northwest_update_record",
+  "arguments": {
+    "app_query": "中卫",
+    "form_query": "工作日志",
+    "data_id": "your_data_id",
+    "values": {
+      "完成情况": "已完成"
+    }
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "tool": "jdy_assistant_discover",
+  "arguments": {
+    "app_name": "中卫维抢修中心",
+    "entry_name": "工作日志",
+    "include_widgets": true,
+    "limit": 10
+  }
+}

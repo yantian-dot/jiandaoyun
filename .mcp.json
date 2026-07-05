@@ -1,0 +1,17 @@
+{
+  "mcp_servers": {
+    "jiandaoyun": {
+      "command": "node",
+      "args": [
+        "./dist/index.js"
+      ],
+      "env": {
+        "JIANDAOYUN_API_KEY": "${JIANDAOYUN_API_KEY}",
+        "JIANDAOYUN_BASE_URL": "https://nocode.pipechina.com.cn",
+        "JIANDAOYUN_USER_MAP_FILE": "${HOME}/.openclaw-main/jiandaoyun-user-map.json",
+        "JIANDAOYUN_REQUIRED_FIELDS_FILE": "${HOME}/.openclaw-main/jiandaoyun-required-fields.json",
+        "JIANDAOYUN_DEFAULT_DATA_CREATOR": "${JIANDAOYUN_DEFAULT_DATA_CREATOR}"
+      }
+    }
+  }
+}

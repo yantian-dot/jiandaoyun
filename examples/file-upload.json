@@ -1,0 +1,19 @@
+{
+  "step_1": {
+    "tool": "jdy_file_get_upload_token",
+    "arguments": {
+      "app_id": "replace_with_app_id",
+      "entry_id": "replace_with_entry_id",
+      "transaction_id": "replace_with_uuid"
+    }
+  },
+  "step_2": {
+    "tool": "jdy_file_upload_local",
+    "arguments": {
+      "upload_url": "https://upload.qiniup.com",
+      "token": "replace_with_upload_token",
+      "file_path": "/absolute/path/to/file.pdf",
+      "mime": "application/pdf"
+    }
+  }
+}

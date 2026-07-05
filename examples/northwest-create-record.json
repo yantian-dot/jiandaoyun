@@ -1,0 +1,18 @@
+{
+  "tool": "jdy_northwest_create_record",
+  "arguments": {
+    "app_query": "中卫",
+    "form_query": "工作日志",
+    "values": {
+      "工作内容": "完成站场巡检",
+      "负责人": "张三",
+      "完成情况": "已完成"
+    },
+    "initiator_name": "张三",
+    "required_fields": ["工作内容", "负责人", "完成情况"],
+    "omit_empty_fields": true,
+    "reject_unresolved_fields": true,
+    "validate_required_fields": true,
+    "is_start_workflow": false
+  }
+}

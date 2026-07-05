@@ -1,0 +1,9 @@
+{
+  "tool": "jdy_workflow_task_approve",
+  "arguments": {
+    "body": {
+      "task_id": "replace_with_task_id",
+      "comment": "同意"
+    }
+  }
+}

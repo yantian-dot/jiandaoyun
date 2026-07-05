@@ -1,0 +1,7 @@
+{
+  "tool": "jdy_app_list",
+  "arguments": {
+    "limit": 100,
+    "skip": 0
+  }
+}

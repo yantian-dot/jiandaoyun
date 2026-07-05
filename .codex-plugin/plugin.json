@@ -1,0 +1,39 @@
+{
+  "name": "jiandaoyun-mcp-plugin",
+  "version": "0.5.2",
+  "description": "Expose Jiandaoyun API operations as MCP tools for Codex and other agent platforms.",
+  "author": {
+    "name": "Local"
+  },
+  "homepage": "https://nocode.pipechina.com.cn",
+  "license": "MIT",
+  "keywords": [
+    "jiandaoyun",
+    "mcp",
+    "nocode",
+    "workflow",
+    "api"
+  ],
+  "mcpServers": "./.mcp.json",
+  "interface": {
+    "displayName": "Jiandaoyun MCP",
+    "shortDescription": "Jiandaoyun API and OpenClaw northwest tools",
+    "longDescription": "A local MCP server that exposes Jiandaoyun APIs, OpenClaw install helpers, schema cache tools, northwest-company presets, and one-step business tools for form context, records, and todo summaries.",
+    "developerName": "Local",
+    "category": "Productivity",
+    "capabilities": [
+      "Read",
+      "Write"
+    ],
+    "websiteURL": "https://nocode.pipechina.com.cn",
+    "defaultPrompt": [
+      "Check my Jiandaoyun connection",
+      "Run the OpenClaw Jiandaoyun doctor",
+      "Refresh northwest-company schema cache",
+      "Find northwest-company form context and fields",
+      "Query northwest-company records by field display names",
+      "Create a northwest-company record from field display names"
+    ],
+    "brandColor": "#18A058"
+  }
+}

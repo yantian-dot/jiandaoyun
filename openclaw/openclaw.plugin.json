@@ -1,0 +1,96 @@
+{
+  "id": "jiandaoyun-mcp-plugin",
+  "name": "Jiandaoyun No-Code MCP",
+  "description": "Jiandaoyun private no-code platform tools exposed through MCP, with OpenClaw-oriented install helpers, schema cache, one-step northwest-company business tools, presets, discovery, field mapping, records, and workflow todos.",
+  "runtime": {
+    "type": "mcp",
+    "config": "./mcp.json"
+  },
+  "skills": [
+    "./agent.md"
+  ],
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "JIANDAOYUN_API_KEY": {
+        "type": "string",
+        "description": "Jiandaoyun API key. Do not store real secrets in the package."
+      },
+      "JIANDAOYUN_BASE_URL": {
+        "type": "string",
+        "default": "https://nocode.pipechina.com.cn"
+      },
+      "JIANDAOYUN_TIMEOUT_MS": {
+        "type": "string",
+        "default": "30000"
+      },
+      "JIANDAOYUN_USER_MAP_FILE": {
+        "type": "string",
+        "description": "Optional JSON file mapping upstream requester IDs or names to Jiandaoyun usernames."
+      },
+      "JIANDAOYUN_USER_MAP_JSON": {
+        "type": "string",
+        "description": "Optional JSON object mapping upstream requester IDs or names to Jiandaoyun usernames."
+      },
+      "JIANDAOYUN_REQUIRED_FIELDS_FILE": {
+        "type": "string",
+        "description": "Optional JSON file mapping app/form keys to business-required field label arrays."
+      },
+      "JIANDAOYUN_REQUIRED_FIELDS_JSON": {
+        "type": "string",
+        "description": "Optional JSON object mapping app/form keys to business-required field label arrays."
+      },
+      "JIANDAOYUN_DEFAULT_DATA_CREATOR": {
+        "type": "string",
+        "description": "Optional fallback Jiandaoyun username for data_creator when no requester identity is supplied. Use only for single-user deployments."
+      }
+    },
+    "required": [
+      "JIANDAOYUN_API_KEY"
+    ]
+  },
+  "contracts": {
+    "tools": [
+      "jdy_openclaw_doctor",
+      "jdy_northwest_refresh_schema",
+      "jdy_northwest_schema_status",
+      "jdy_northwest_clear_schema_cache",
+      "jdy_northwest_get_form_context",
+      "jdy_northwest_read_records",
+      "jdy_northwest_create_record",
+      "jdy_northwest_update_record",
+      "jdy_preset_list",
+      "jdy_preset_northwest_apps",
+      "jdy_preset_northwest_forms",
+      "jdy_preset_northwest_find_form",
+      "jdy_assistant_check_connection",
+      "jdy_assistant_discover",
+      "jdy_assistant_read_records",
+      "jdy_assistant_create_record",
+      "jdy_assistant_update_record",
+      "jdy_assistant_todo_summary",
+      "jdy_app_list",
+      "jdy_entry_list",
+      "jdy_widget_list",
+      "jdy_data_get",
+      "jdy_data_list",
+      "jdy_data_create",
+      "jdy_data_batch_create",
+      "jdy_data_update",
+      "jdy_data_batch_update",
+      "jdy_data_delete",
+      "jdy_data_batch_delete",
+      "jdy_file_get_upload_token",
+      "jdy_file_upload_local",
+      "jdy_workflow_task_list",
+      "jdy_workflow_task_approve",
+      "jdy_workflow_task_rollback",
+      "jdy_workflow_task_transfer",
+      "jdy_workflow_task_add_sign",
+      "jdy_workflow_task_revoke",
+      "jdy_workflow_task_reject",
+      "jdy_raw_post"
+    ]
+  }
+}

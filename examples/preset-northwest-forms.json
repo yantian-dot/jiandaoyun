@@ -1,0 +1,9 @@
+{
+  "tool": "jdy_preset_northwest_forms",
+  "arguments": {
+    "app_query": "中卫",
+    "form_query": "工作日志",
+    "include_widgets": true,
+    "limit_per_app": 100
+  }
+}

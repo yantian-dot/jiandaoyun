@@ -1,0 +1,8 @@
+{
+  "tool": "jdy_northwest_refresh_schema",
+  "arguments": {
+    "app_query": "中卫",
+    "include_widgets": true,
+    "limit_per_app": 100
+  }
+}

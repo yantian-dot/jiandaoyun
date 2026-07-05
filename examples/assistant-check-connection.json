@@ -1,0 +1,6 @@
+{
+  "tool": "jdy_assistant_check_connection",
+  "arguments": {
+    "probe": true
+  }
+}
