@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-PACKAGE_TGZ="${1:-./jiandaoyun-mcp-plugin-0.5.2.tgz}"
+PACKAGE_TGZ="${1:-./jiandaoyun-mcp-plugin-0.5.3.tgz}"
 
 echo "== Jiandaoyun OpenClaw installer helper =="
 
@@ -37,6 +37,10 @@ command -v jiandaoyun-openclaw || true
 echo
 echo "Local prerequisite check:"
 jiandaoyun-openclaw doctor || true
+
+echo
+echo "OpenClaw package validation:"
+npm explore -g jiandaoyun-mcp-plugin -- npm run validate:openclaw || true
 
 echo
 echo "Recommended OpenClaw command:"

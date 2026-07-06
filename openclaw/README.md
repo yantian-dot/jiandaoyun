@@ -14,13 +14,13 @@ It is not a full OpenClaw channel plugin. It keeps the verified MCP server as th
 Install the package first:
 
 ```bash
-npm install -g ./jiandaoyun-mcp-plugin-0.5.2.tgz
+npm install -g ./jiandaoyun-mcp-plugin-0.5.3.tgz
 ```
 
 Or use the helper script from the unpacked project directory:
 
 ```bash
-./scripts/install-openclaw.sh ./jiandaoyun-mcp-plugin-0.5.2.tgz
+./scripts/install-openclaw.sh ./jiandaoyun-mcp-plugin-0.5.3.tgz
 ```
 
 Then add the MCP server in OpenClaw:
@@ -34,6 +34,15 @@ openclaw mcp add jiandaoyun \
 ```
 
 After import, ask the agent to run `jdy_openclaw_doctor` first.
+
+For the OpenClaw + openclaw-weact + weact-cli assistant, also expose the native skill directory:
+
+```bash
+ln -sfn "$(npm root -g)/jiandaoyun-mcp-plugin/openclaw/skills/jiandaoyun-openclaw-tools" \
+  "$HOME/.openclaw-main/plugin-skills/jiandaoyun-openclaw-tools"
+```
+
+The server installer handles this automatically.
 
 Local helper commands:
 
@@ -88,3 +97,5 @@ Examples:
 - Prefer `jdy_assistant_read_records`, `jdy_assistant_create_record`, and `jdy_assistant_update_record` for field label mapping.
 - Use raw `jdy_data_*` tools only when exact field IDs and API bodies are already known.
 - Use delete, workflow approval, department import, and contact management tools only after explicit user confirmation.
+- For writes, do not send blank values for fields the user did not mention. If required fields are missing, ask a follow-up question before creating the record.
+- To make the Jiandaoyun submitter equal the WeACT requester, pass SenderId/display name through `initiator_open_id` / `initiator_name` and configure `JIANDAOYUN_USER_MAP_FILE`.

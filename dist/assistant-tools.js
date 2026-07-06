@@ -131,6 +131,13 @@ export const assistantTools = [
             initiator_username: stringSchema("Optional Jiandaoyun username of the upstream requester. Used as data_creator when data_creator is omitted."),
             initiator_open_id: stringSchema("Optional upstream requester open_id. Resolved through JIANDAOYUN_USER_MAP_JSON or JIANDAOYUN_USER_MAP_FILE."),
             initiator_name: stringSchema("Optional upstream requester display name. Resolved through JIANDAOYUN_USER_MAP_JSON or JIANDAOYUN_USER_MAP_FILE."),
+            requester_username: stringSchema("Optional alias of initiator_username."),
+            requester_open_id: stringSchema("Optional alias of initiator_open_id."),
+            requester_name: stringSchema("Optional alias of initiator_name."),
+            sender_open_id: stringSchema("Optional WeACT SenderId alias of initiator_open_id."),
+            sender_name: stringSchema("Optional WeACT sender display-name alias of initiator_name."),
+            user_open_id: stringSchema("Optional current user open_id alias of initiator_open_id."),
+            user_name: stringSchema("Optional current user display-name alias of initiator_name."),
             omit_empty_fields: booleanSchema("Omit blank values before create/update. Defaults to true."),
             clear_fields: stringArray("Field labels or IDs to explicitly clear by writing an empty value."),
             allow_blank_fields: stringArray("Field labels or IDs allowed to be written as blank values."),
@@ -359,14 +366,40 @@ function mergeMissingFields(...groups) {
     return merged;
 }
 function isRequiredWidget(widget) {
-    return widget.required === true ||
-        widget.required === 1 ||
-        widget.is_required === true ||
-        widget.is_required === 1 ||
-        widget.required_field === true ||
-        widget.required_field === 1 ||
-        (isObject(widget.validator) && widget.validator.required === true) ||
-        (isObject(widget.setting) && widget.setting.required === true);
+    return isRequiredValue(widget.required) ||
+        isRequiredValue(widget.is_required) ||
+        isRequiredValue(widget.required_field) ||
+        isRequiredValue(widget.isRequired) ||
+        hasRequiredFlag(widget.validator) ||
+        hasRequiredFlag(widget.validate) ||
+        hasRequiredFlag(widget.validation) ||
+        hasRequiredFlag(widget.setting) ||
+        hasRequiredFlag(widget.settings) ||
+        hasRequiredFlag(widget.field_setting) ||
+        hasRequiredFlag(widget.props) ||
+        hasRequiredRule(widget.rules);
+}
+function hasRequiredFlag(value) {
+    return isObject(value) && (isRequiredValue(value.required) ||
+        isRequiredValue(value.is_required) ||
+        isRequiredValue(value.required_field) ||
+        isRequiredValue(value.isRequired));
+}
+function hasRequiredRule(value) {
+    if (isRequiredValue(value))
+        return true;
+    if (Array.isArray(value))
+        return value.some((item) => isRequiredValue(item) || hasRequiredFlag(item));
+    return hasRequiredFlag(value);
+}
+function isRequiredValue(value) {
+    if (value === true || value === 1)
+        return true;
+    if (typeof value === "string") {
+        const normalized = value.trim().toLowerCase();
+        return normalized === "true" || normalized === "1" || normalized === "required" || normalized === "yes" || normalized === "必填";
+    }
+    return false;
 }
 function isBlankJdyValue(value) {
     const actual = isValueObject(value) ? value.value : value;
@@ -511,13 +544,21 @@ function readStringList(value) {
     return value.filter((item) => typeof item === "string" && item.trim().length > 0).map((item) => item.trim());
 }
 function resolveDataCreator(input) {
-    const explicit = optionalString(input.data_creator, "data_creator") ?? optionalString(input.initiator_username, "initiator_username");
+    const explicit = optionalString(input.data_creator, "data_creator") ??
+        optionalString(input.initiator_username, "initiator_username") ??
+        optionalString(input.requester_username, "requester_username");
     if (explicit)
         return explicit;
     const fallback = envString("JIANDAOYUN_DEFAULT_DATA_CREATOR");
     const candidates = [
         optionalString(input.initiator_open_id, "initiator_open_id"),
-        optionalString(input.initiator_name, "initiator_name")
+        optionalString(input.requester_open_id, "requester_open_id"),
+        optionalString(input.sender_open_id, "sender_open_id"),
+        optionalString(input.user_open_id, "user_open_id"),
+        optionalString(input.initiator_name, "initiator_name"),
+        optionalString(input.requester_name, "requester_name"),
+        optionalString(input.sender_name, "sender_name"),
+        optionalString(input.user_name, "user_name")
     ].filter(Boolean);
     if (candidates.length === 0)
         return fallback;

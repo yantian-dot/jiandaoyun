@@ -45,6 +45,22 @@ Preferred tools:
 - `jdy_preset_northwest_forms`
 - `jdy_preset_northwest_find_form`
 
+## OpenClaw Skill
+
+This package exposes an OpenClaw native skill directory at:
+
+```text
+openclaw/skills/jiandaoyun-openclaw-tools/SKILL.md
+```
+
+For the OpenClaw + openclaw-weact + weact-cli assistant, link that skill into:
+
+```text
+$HOME/.openclaw-main/plugin-skills/jiandaoyun-openclaw-tools
+```
+
+The server installer does this automatically.
+
 ## Safety Rules
 
 - Never invent `app_id`, `entry_id`, `data_id`, task IDs, or field IDs.
@@ -54,9 +70,10 @@ Preferred tools:
 - For write operations, summarize the target app/form, resolved fields, and data body before execution when the platform supports human confirmation.
 - For create/update operations, do not include fields that the user did not explicitly provide. Leave omitted fields absent instead of sending blank values.
 - If the tool reports missing required fields, ask the user for those fields before writing. Do not guess required values.
-- For `机械队发电统计`, do not create a record until at least `启机原因`, `作业位置`, `启动设备`, and `开始时间` are known. If any of these are missing, ask a concise follow-up question instead of calling a create tool.
+- If a form has business-required fields that the API does not mark as required, pass them through `required_fields` or configure `JIANDAOYUN_REQUIRED_FIELDS_FILE`.
+- For `机械队发电统计`, do not create a record until at least `启机原因`, `作业位置`, `启动设备`, and `开始时间` are known. If the running form also marks `作业详情` as required, ask for it before calling a create tool.
 - To intentionally clear a field, use `clear_fields`; do not send an empty string as an implicit clear operation.
-- If the upstream requester is known, pass `data_creator`, `initiator_username`, `initiator_open_id`, or `initiator_name` so the plugin can set Jiandaoyun `data_creator`. For WeACT chats, prefer the visible sender name as `initiator_name` when no open_id is available. If no mapping is known, do not invent the submitter.
+- If the upstream requester is known, pass `data_creator`, `initiator_username`, `initiator_open_id`, `initiator_name`, or the aliases `sender_open_id` / `sender_name` so the plugin can set Jiandaoyun `data_creator`. For WeACT chats, prefer SenderId as `initiator_open_id` when available; otherwise use the visible sender name as `initiator_name`. If no mapping is known, do not invent the submitter or pass literal `creator`.
 
 ## Common Intents
 

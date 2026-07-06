@@ -89,7 +89,7 @@ jiandaoyun-openclaw install-template
 
 ## OpenClaw 一步式工具
 
-这些工具是 0.5.2 的推荐入口：
+这些工具是 0.5.3 的推荐入口：
 
 - `jdy_openclaw_doctor`：检查安装配置、私有域名、只读连通性和西北公司预设完整性。
 - `jdy_northwest_refresh_schema`：刷新西北公司应用/表单/字段缓存。
@@ -102,17 +102,17 @@ jiandaoyun-openclaw install-template
 
 ### 写入保护和提交人
 
-0.5.2 对 `jdy_northwest_create_record`、`jdy_northwest_update_record`、`jdy_assistant_create_record`、`jdy_assistant_update_record` 增加写入保护：
+0.5.3 对 `jdy_northwest_create_record`、`jdy_northwest_update_record`、`jdy_assistant_create_record`、`jdy_assistant_update_record` 增加写入保护：
 
 - 默认 `omit_empty_fields=true`：`null`、空字符串、空数组、空对象不会被提交。
 - 默认 `reject_unresolved_fields=true`：无法解析成简道云字段的中文字段名会被拒绝，不会原样写入。
 - 创建记录默认 `validate_required_fields=true`：识别到必填字段缺失时返回错误，让上游先向用户追问。
-- 对 `西北-中卫维抢修中心/机械队发电统计` 内置业务必填字段：`启机原因`、`作业位置`、`启动设备`、`开始时间`。如果用户没提供这些内容，写入工具会拒绝创建并要求补齐。
+- 对 `西北-中卫维抢修中心/机械队发电统计` 支持业务必填字段配置。当前服务器安装脚本会配置：`启机原因`、`作业位置`、`启动设备`、`开始时间`、`作业详情`。如果用户没提供这些内容，写入工具会拒绝创建并要求补齐。
 - 需要主动清空字段时使用 `clear_fields`，不要用空字符串隐式清空。
 - 如果某个字段确实允许提交空值，显式放入 `allow_blank_fields`。
 - 如果其他表单的 API 没有返回必填标记，可以通过 `required_fields` 参数，或 `JIANDAOYUN_REQUIRED_FIELDS_JSON` / `JIANDAOYUN_REQUIRED_FIELDS_FILE` 配置业务必填字段。
 
-提交人使用简道云创建接口的 `data_creator`。上游如果能拿到发起人的简道云 username，可以直接传 `data_creator` 或 `initiator_username`。也可以配置映射：
+提交人使用简道云创建接口的 `data_creator`。上游如果能拿到发起人的简道云 username，可以直接传 `data_creator`、`initiator_username` 或 `requester_username`。在 WeACT/OpenClaw 中，优先把 SenderId 传为 `initiator_open_id` / `sender_open_id`，或把显示名传为 `initiator_name` / `sender_name`。也可以配置映射：
 
 ```bash
 export JIANDAOYUN_USER_MAP_FILE="$HOME/.openclaw-main/jiandaoyun-user-map.json"
@@ -137,8 +137,8 @@ export JIANDAOYUN_REQUIRED_FIELDS_FILE="$HOME/.openclaw-main/jiandaoyun-required
 
 ```json
 {
-  "西北-中卫维抢修中心/机械队发电统计": ["启机原因", "作业位置", "启动设备", "开始时间"],
-  "669501b6c47c535dfe561619/6743d2b19d81b4a42b36e4d9": ["启机原因", "作业位置", "启动设备", "开始时间"]
+  "西北-中卫维抢修中心/机械队发电统计": ["启机原因", "作业位置", "启动设备", "开始时间", "作业详情"],
+  "669501b6c47c535dfe561619/6743d2b19d81b4a42b36e4d9": ["启机原因", "作业位置", "启动设备", "开始时间", "作业详情"]
 }
 ```
 
