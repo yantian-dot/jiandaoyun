@@ -8,6 +8,8 @@
         "JIANDAOYUN_BASE_URL": "https://nocode.pipechina.com.cn",
         "JIANDAOYUN_TIMEOUT_MS": "30000",
         "JIANDAOYUN_USER_MAP_FILE": "${HOME}/.openclaw-main/jiandaoyun-user-map.json",
+        "JIANDAOYUN_MEMBER_MAP_FILE": "${HOME}/.openclaw-main/jiandaoyun-member-map.json",
+        "JIANDAOYUN_ROOT_DEPT_NO": "1",
         "JIANDAOYUN_REQUIRED_FIELDS_FILE": "${HOME}/.openclaw-main/jiandaoyun-required-fields.json",
         "JIANDAOYUN_CREATOR_POLICY": "locked",
         "JIANDAOYUN_WEACT_IDENTITY_LOOKUP": "auto",

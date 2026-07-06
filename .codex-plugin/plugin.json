@@ -1,6 +1,6 @@
 {
   "name": "jiandaoyun-mcp-plugin",
-  "version": "0.5.5",
+  "version": "0.5.6",
   "description": "Expose Jiandaoyun API operations as MCP tools for Codex and other agent platforms.",
   "author": {
     "name": "Local"

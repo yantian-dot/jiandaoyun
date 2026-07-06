@@ -89,7 +89,7 @@ jiandaoyun-openclaw install-template
 
 ## OpenClaw 一步式工具
 
-这些工具是 0.5.5 的推荐入口：
+这些工具是 0.5.6 的推荐入口：
 
 - `jdy_openclaw_doctor`：检查安装配置、私有域名、只读连通性和西北公司预设完整性。
 - `jdy_northwest_refresh_schema`：刷新西北公司应用/表单/字段缓存。
@@ -102,7 +102,7 @@ jiandaoyun-openclaw install-template
 
 ### 写入保护和提交人
 
-0.5.5 对 `jdy_northwest_create_record`、`jdy_northwest_update_record`、`jdy_assistant_create_record`、`jdy_assistant_update_record` 增加写入保护：
+0.5.6 对 `jdy_northwest_create_record`、`jdy_northwest_update_record`、`jdy_assistant_create_record`、`jdy_assistant_update_record` 增加写入保护，并把 `jdy_data_create`、`jdy_data_batch_create`、面向创建接口的 `jdy_raw_post` 纳入提交人锁定策略：
 
 - 默认 `omit_empty_fields=true`：`null`、空字符串、空数组、空对象不会被提交。
 - 默认 `reject_unresolved_fields=true`：无法解析成简道云字段的中文字段名会被拒绝，不会原样写入。
@@ -111,12 +111,15 @@ jiandaoyun-openclaw install-template
 - 需要主动清空字段时使用 `clear_fields`，不要用空字符串隐式清空。
 - 如果某个字段确实允许提交空值，显式放入 `allow_blank_fields`。
 - 如果其他表单的 API 没有返回必填标记，可以通过 `required_fields` 参数，或 `JIANDAOYUN_REQUIRED_FIELDS_JSON` / `JIANDAOYUN_REQUIRED_FIELDS_FILE` 配置业务必填字段。
+- 对简道云 `user` / `usergroup` 字段，写入前会把自然语言姓名（例如 `邢宇嘉`、`张通, 贾发强`）解析成简道云通讯录成员对象，再按官方要求提交 `username`。如果同名成员不唯一，工具会拒绝猜测并要求补充简道云 `username` 或配置映射。
 
 提交人使用简道云创建接口的 `data_creator`。多人 WeACT/OpenClaw 助手建议启用锁定策略：
 
 ```bash
 export JIANDAOYUN_CREATOR_POLICY=locked
 export JIANDAOYUN_USER_MAP_FILE="$HOME/.openclaw-main/jiandaoyun-user-map.json"
+export JIANDAOYUN_MEMBER_MAP_FILE="$HOME/.openclaw-main/jiandaoyun-member-map.json"
+export JIANDAOYUN_ROOT_DEPT_NO=1
 export JIANDAOYUN_WEACT_IDENTITY_LOOKUP=auto
 export JIANDAOYUN_WEACT_CLI_BIN=weact-cli
 export JIANDAOYUN_WEACT_CLI_AUTH=bot
@@ -143,6 +146,19 @@ export JIANDAOYUN_WEACT_CLI_AUTH=bot
 ```
 
 然后在写入工具参数中传 `sender_open_id` 或 `initiator_open_id`；如果 OpenClaw MCP runtime 传入 `_meta.sender_open_id`、`_meta.sender_id` 或 `_meta.user_open_id`，插件也会自动补为发起人 open_id。没有 open_id、映射缺失且 WeACT 身份解析无法给出可信提交人时，锁定模式会拒绝写入，避免提交人落成 `creator` 或被用户手动覆盖。单用户部署可把 `JIANDAOYUN_CREATOR_POLICY` 设回 `caller` 并使用 `JIANDAOYUN_DEFAULT_DATA_CREATOR`，但不建议给多人助手使用。
+
+人员字段映射文件示例：
+
+```json
+{
+  "邢宇嘉": "xjy_username",
+  "张通": {
+    "username": "zt_username"
+  }
+}
+```
+
+如果不配置 `JIANDAOYUN_MEMBER_MAP_FILE`，工具会尝试用 `/api/v5/corp/user/get` 和 `/api/v5/corp/department/user/list` 从简道云通讯录中按 `username`、`name`、`integrate_id`、邮箱或手机号做精确匹配。匹配到 0 个或多个都会拒绝写入，避免把人员字段写成普通文本。
 
 业务必填字段配置示例：
 

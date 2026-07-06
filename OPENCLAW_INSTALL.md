@@ -3,13 +3,13 @@
 ## 1. 安装包
 
 ```bash
-npm install -g ./jiandaoyun-mcp-plugin-0.5.5.tgz
+npm install -g ./jiandaoyun-mcp-plugin-0.5.6.tgz
 ```
 
 也可以使用辅助脚本：
 
 ```bash
-./scripts/install-openclaw.sh ./jiandaoyun-mcp-plugin-0.5.5.tgz
+./scripts/install-openclaw.sh ./jiandaoyun-mcp-plugin-0.5.6.tgz
 ```
 
 ## 2. 添加到 OpenClaw
@@ -27,6 +27,8 @@ openclaw mcp add jiandaoyun \
 ```bash
 export JIANDAOYUN_CREATOR_POLICY=locked
 export JIANDAOYUN_USER_MAP_FILE="$HOME/.openclaw-main/jiandaoyun-user-map.json"
+export JIANDAOYUN_MEMBER_MAP_FILE="$HOME/.openclaw-main/jiandaoyun-member-map.json"
+export JIANDAOYUN_ROOT_DEPT_NO=1
 export JIANDAOYUN_WEACT_IDENTITY_LOOKUP=auto
 export JIANDAOYUN_WEACT_CLI_BIN=weact-cli
 export JIANDAOYUN_WEACT_CLI_AUTH=bot
@@ -45,7 +47,7 @@ export JIANDAOYUN_WEACT_CLI_AUTH=bot
 }
 ```
 
-锁定模式优先使用 `ou_xxx` 直接映射。直接映射缺失时，`0.5.5` 会尝试调用 `weact-cli contact +get-user --user-id <open_id> --as bot --format json`，再用返回的 `open_id`、`user_id`、`employee_no`、`email`、`enterprise_email` 等唯一字段查映射。只有确认 WeACT 姓名就是唯一简道云 username 时，才设置 `JIANDAOYUN_WEACT_CREATOR_FIELD=name`。
+锁定模式优先使用 `ou_xxx` 直接映射。直接映射缺失时，`0.5.6` 会尝试调用 `weact-cli contact +get-user --user-id <open_id> --as bot --format json`，再用返回的 `open_id`、`user_id`、`employee_no`、`email`、`enterprise_email` 等唯一字段查映射。只有确认 WeACT 姓名就是唯一简道云 username 时，才设置 `JIANDAOYUN_WEACT_CREATOR_FIELD=name`。0.5.6 同时会把自然语言中的人员姓名解析为简道云 `user` / `usergroup` 字段所需的成员对象；同名或查不到时会拒绝写入。
 
 不要把浏览器里的 `dashboard#/app/...` 地址填到 `JIANDAOYUN_BASE_URL`。
 

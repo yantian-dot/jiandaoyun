@@ -3,6 +3,7 @@ import { northwestTools } from "./northwest-tools.js";
 import { assistantTools } from "./assistant-tools.js";
 import { presetTools } from "./preset-tools.js";
 import { arraySchema, booleanSchema, commonPaging, inputObject, numberSchema, objectSchema, stringSchema } from "./json-schema.js";
+import { resolveDataCreator as resolveIdentityDataCreator } from "./creator-resolver.js";
 const stringArray = (description) => arraySchema(description, { type: "string" });
 const numberArray = (description) => arraySchema(description, { type: "number" });
 const bodyInput = inputObject({
@@ -10,6 +11,15 @@ const bodyInput = inputObject({
 }, ["body"]);
 const emptyInput = inputObject({});
 const bodyOnly = (input) => asObject(input.body, "body");
+const creatorIdentityInputs = {
+    data_creator: stringSchema("Optional submitter username. Ignored when JIANDAOYUN_CREATOR_POLICY=locked."),
+    initiator_username: stringSchema("Optional Jiandaoyun username of the upstream requester. Ignored when JIANDAOYUN_CREATOR_POLICY=locked."),
+    initiator_open_id: stringSchema("Optional upstream requester open_id. In locked mode this must come from the WeACT message SenderId/open_id."),
+    requester_username: stringSchema("Optional alias of initiator_username."),
+    requester_open_id: stringSchema("Optional alias of initiator_open_id."),
+    sender_open_id: stringSchema("Optional WeACT SenderId alias of initiator_open_id."),
+    user_open_id: stringSchema("Optional current user open_id alias of initiator_open_id.")
+};
 const pickBody = (keys, extraKey = "extra") => (input) => {
     const body = {};
     for (const key of keys) {
@@ -27,7 +37,8 @@ const makePostTool = (options) => ({
     inputSchema: options.inputSchema,
     handler: async (input, client) => {
         const path = typeof options.path === "function" ? options.path(input) : options.path;
-        return client.post(path, options.body ? options.body(input) : bodyOnly(input));
+        const body = options.body ? await options.body(input) : bodyOnly(input);
+        return client.post(path, body);
     }
 });
 export const coreTools = [
@@ -91,12 +102,18 @@ export const coreTools = [
             app_id: stringSchema("Jiandaoyun application ID."),
             entry_id: stringSchema("Jiandaoyun form ID."),
             data: objectSchema("Jiandaoyun data object. Field values use { value: ... } shape."),
-            data_creator: stringSchema("Optional submitter username."),
+            ...creatorIdentityInputs,
             is_start_workflow: booleanSchema("Whether to start workflow for workflow forms."),
             is_start_trigger: booleanSchema("Whether to trigger Jiandaoyun assistant."),
             transaction_id: stringSchema("Optional transaction ID, required when binding uploaded files.")
         }, ["app_id", "entry_id", "data"]),
-        body: pickBody(["app_id", "entry_id", "data", "data_creator", "is_start_workflow", "is_start_trigger", "transaction_id"])
+        body: async (input) => {
+            const body = pickBody(["app_id", "entry_id", "data", "is_start_workflow", "is_start_trigger", "transaction_id"])(input);
+            const creator = await resolveIdentityDataCreator(input);
+            if (creator)
+                body.data_creator = creator;
+            return body;
+        }
     }),
     makePostTool({
         name: "jdy_data_batch_create",
@@ -106,11 +123,17 @@ export const coreTools = [
             app_id: stringSchema("Jiandaoyun application ID."),
             entry_id: stringSchema("Jiandaoyun form ID."),
             data_list: arraySchema("Jiandaoyun data objects. Each item uses field { value: ... } shape.", objectSchema("Record data.")),
-            data_creator: stringSchema("Optional submitter username."),
+            ...creatorIdentityInputs,
             is_start_workflow: booleanSchema("Whether to start workflow for workflow forms."),
             transaction_id: stringSchema("Transaction ID for retry/file binding.")
         }, ["app_id", "entry_id", "data_list"]),
-        body: pickBody(["app_id", "entry_id", "data_list", "data_creator", "is_start_workflow", "transaction_id"])
+        body: async (input) => {
+            const body = pickBody(["app_id", "entry_id", "data_list", "is_start_workflow", "transaction_id"])(input);
+            const creator = await resolveIdentityDataCreator(input);
+            if (creator)
+                body.data_creator = creator;
+            return body;
+        }
     }),
     makePostTool({
         name: "jdy_data_update",
@@ -251,12 +274,24 @@ export const coreTools = [
         description: "Call a Jiandaoyun POST endpoint under /api/. Use only for newly documented endpoints not yet wrapped by a dedicated tool.",
         inputSchema: inputObject({
             path: stringSchema("Jiandaoyun API path. Must start with /api/. Example: /api/v5/app/list"),
-            body: objectSchema("JSON body to send.")
+            body: objectSchema("JSON body to send."),
+            ...creatorIdentityInputs
         }, ["path", "body"]),
-        handler: async (input, client) => client.rawPost(requireString(input.path, "path"), asObject(input.body, "body"))
+        handler: async (input, client) => {
+            const path = requireString(input.path, "path");
+            const body = asObject(input.body, "body");
+            if (isDataCreatePath(path)) {
+                const creator = await resolveIdentityDataCreator(input);
+                return client.rawPost(path, creator ? { ...body, data_creator: creator } : body);
+            }
+            return client.rawPost(path, body);
+        }
     }
 ];
 export const tools = [...cacheTools, ...northwestTools, ...presetTools, ...assistantTools, ...coreTools];
+function isDataCreatePath(path) {
+    return path === "/api/v5/app/entry/data/create" || path === "/api/v5/app/entry/data/batch_create";
+}
 function requireString(value, field) {
     if (typeof value !== "string" || value.length === 0) {
         throw new Error(`Expected non-empty string for ${field}.`);

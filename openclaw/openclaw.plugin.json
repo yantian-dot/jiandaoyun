@@ -33,6 +33,19 @@
         "type": "string",
         "description": "Optional JSON object mapping upstream requester SenderId/open_id or unique WeACT identity fields to Jiandaoyun usernames."
       },
+      "JIANDAOYUN_MEMBER_MAP_FILE": {
+        "type": "string",
+        "description": "Optional JSON file mapping natural-language member names to Jiandaoyun usernames for user/usergroup fields."
+      },
+      "JIANDAOYUN_MEMBER_MAP_JSON": {
+        "type": "string",
+        "description": "Optional JSON object mapping natural-language member names to Jiandaoyun usernames for user/usergroup fields."
+      },
+      "JIANDAOYUN_ROOT_DEPT_NO": {
+        "type": "string",
+        "default": "1",
+        "description": "Root Jiandaoyun department number used when resolving user/usergroup field names from the contact list."
+      },
       "JIANDAOYUN_REQUIRED_FIELDS_FILE": {
         "type": "string",
         "description": "Optional JSON file mapping app/form keys to business-required field label arrays."

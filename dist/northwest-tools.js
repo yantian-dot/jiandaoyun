@@ -2,6 +2,7 @@ import { arraySchema, booleanSchema, inputObject, numberSchema, objectSchema, st
 import { northwestCompanyPreset } from "./presets.js";
 import { existsSync, readFileSync } from "node:fs";
 import { resolveDataCreator as resolveIdentityDataCreator } from "./creator-resolver.js";
+import { resolveJdyFieldValue } from "./value-resolver.js";
 const stringArray = (description) => arraySchema(description, { type: "string" });
 export const northwestTools = [
     {
@@ -157,7 +158,7 @@ export const northwestTools = [
         }, ["form_query", "values"]),
         handler: async (input, client) => {
             const resolved = await resolveSingleNorthwestForm(client, input);
-            const mapped = mapValuesToJdyData(resolved.widgets, asObject(input.values, "values"), readWriteOptions(input, "create", resolved));
+            const mapped = await mapValuesToJdyData(client, resolved.widgets, asObject(input.values, "values"), readWriteOptions(input, "create", resolved));
             const body = compactObject({
                 app_id: resolved.app.app_id,
                 entry_id: resolved.entryId,
@@ -197,7 +198,7 @@ export const northwestTools = [
         }, ["form_query", "data_id", "values"]),
         handler: async (input, client) => {
             const resolved = await resolveSingleNorthwestForm(client, input);
-            const mapped = mapValuesToJdyData(resolved.widgets, asObject(input.values, "values"), readWriteOptions(input, "update", resolved));
+            const mapped = await mapValuesToJdyData(client, resolved.widgets, asObject(input.values, "values"), readWriteOptions(input, "update", resolved));
             const body = compactObject({
                 app_id: resolved.app.app_id,
                 entry_id: resolved.entryId,
@@ -322,7 +323,7 @@ function readWriteOptions(input, mode, resolved) {
         rejectUnresolvedFields: input.reject_unresolved_fields !== false
     };
 }
-function mapValuesToJdyData(widgets, values, options) {
+async function mapValuesToJdyData(client, widgets, values, options) {
     const resolution = resolveFieldNames(widgets, Object.keys(values));
     const clearResolution = resolveFieldNames(widgets, options.clearFields);
     const allowBlankResolution = resolveFieldNames(widgets, options.allowBlankFields);
@@ -331,15 +332,26 @@ function mapValuesToJdyData(widgets, values, options) {
         throw new Error(`Unresolved Jiandaoyun field label(s): ${unresolved.join(", ")}. Use jdy_northwest_get_form_context or field IDs before writing.`);
     }
     const allowBlank = new Set([...Object.values(allowBlankResolution.by_input), ...options.allowBlankFields]);
+    const widgetByField = createWidgetMap(widgets);
     const data = {};
     const omittedEmptyFields = [];
+    const valueConversions = [];
     for (const [labelOrField, rawValue] of Object.entries(values)) {
         const field = resolution.by_input[labelOrField] ?? labelOrField;
         if (options.omitEmptyFields && isBlankJdyValue(rawValue) && !allowBlank.has(field) && !allowBlank.has(labelOrField)) {
             omittedEmptyFields.push(labelOrField);
             continue;
         }
-        data[field] = isValueObject(rawValue) ? rawValue : { value: rawValue };
+        const baseValue = isValueObject(rawValue) ? rawValue.value : rawValue;
+        const resolvedValue = await resolveJdyFieldValue(client, widgetByField.get(field), baseValue);
+        if (resolvedValue.conversion) {
+            valueConversions.push({
+                field,
+                label: labelOrField,
+                ...resolvedValue.conversion
+            });
+        }
+        data[field] = isValueObject(rawValue) ? { ...rawValue, value: resolvedValue.value } : { value: resolvedValue.value };
     }
     for (const labelOrField of options.clearFields) {
         const field = clearResolution.by_input[labelOrField] ?? labelOrField;
@@ -362,6 +374,7 @@ function mapValuesToJdyData(widgets, values, options) {
             ...resolution,
             unresolved,
             omitted_empty_fields: omittedEmptyFields,
+            value_conversions: valueConversions,
             clear_fields: clearResolution.by_input,
             allow_blank_fields: allowBlankResolution.by_input,
             missing_required_fields: missingRequiredFields
@@ -403,6 +416,15 @@ function createFieldMap(widgets) {
             if (value)
                 map.set(normalize(value), fieldId);
         }
+    }
+    return map;
+}
+function createWidgetMap(widgets) {
+    const map = new Map();
+    for (const widget of widgets) {
+        const fieldId = readIdentity(widget, ["name", "widget_id", "field_id", "_id", "id"]);
+        if (fieldId)
+            map.set(fieldId, widget);
     }
     return map;
 }
