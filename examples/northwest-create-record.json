@@ -8,7 +8,7 @@
       "负责人": "张三",
       "完成情况": "已完成"
     },
-    "initiator_name": "张三",
+    "sender_open_id": "ou_xxx",
     "required_fields": ["工作内容", "负责人", "完成情况"],
     "omit_empty_fields": true,
     "reject_unresolved_fields": true,

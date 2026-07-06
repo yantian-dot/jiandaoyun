@@ -125,18 +125,18 @@ export const northwestTools = [
     },
     {
         name: "jdy_northwest_create_record",
-        description: "One-step northwest-company record creation. Resolves app/form by business keywords, maps Chinese field labels, checks required/business-required fields, and creates a record. When called from WeACT/OpenClaw, pass data_creator, initiator_username, initiator_open_id, or initiator_name whenever the requester is known; otherwise Jiandaoyun may use its default creator.",
+        description: "One-step northwest-company record creation. Resolves app/form by business keywords, maps Chinese field labels, checks required/business-required fields, and creates a record. In WeACT/OpenClaw multi-user deployments, set JIANDAOYUN_CREATOR_POLICY=locked and pass the real SenderId/open_id so the tool can resolve data_creator from the server-side user map.",
         inputSchema: inputObject({
             app_id: stringSchema("Optional app ID in the northwest_company preset."),
             app_query: stringSchema("Optional app keyword, for example 中卫, QHSE, 生产运维."),
             entry_id: stringSchema("Optional form/entry ID."),
             form_query: stringSchema("Form keyword, for example 工作日志."),
             values: objectSchema("Record values keyed by field ID or field display label."),
-            data_creator: stringSchema("Optional submitter username."),
-            initiator_username: stringSchema("Optional Jiandaoyun username of the upstream requester. Used as data_creator when data_creator is omitted."),
-            initiator_open_id: stringSchema("Optional upstream requester open_id. Resolved through JIANDAOYUN_USER_MAP_JSON or JIANDAOYUN_USER_MAP_FILE."),
-            initiator_name: stringSchema("Optional upstream requester display name. Resolved through JIANDAOYUN_USER_MAP_JSON or JIANDAOYUN_USER_MAP_FILE."),
-            requester_username: stringSchema("Optional alias of initiator_username."),
+            data_creator: stringSchema("Optional submitter username. Ignored when JIANDAOYUN_CREATOR_POLICY=locked."),
+            initiator_username: stringSchema("Optional Jiandaoyun username of the upstream requester. Ignored when JIANDAOYUN_CREATOR_POLICY=locked."),
+            initiator_open_id: stringSchema("Optional upstream requester open_id. In locked mode this must come from the WeACT message SenderId and resolve through JIANDAOYUN_USER_MAP_JSON or JIANDAOYUN_USER_MAP_FILE."),
+            initiator_name: stringSchema("Optional upstream requester display name. Resolved only outside locked creator mode."),
+            requester_username: stringSchema("Optional alias of initiator_username. Ignored when JIANDAOYUN_CREATOR_POLICY=locked."),
             requester_open_id: stringSchema("Optional alias of initiator_open_id."),
             requester_name: stringSchema("Optional alias of initiator_name."),
             sender_open_id: stringSchema("Optional WeACT SenderId alias of initiator_open_id."),
@@ -610,6 +610,9 @@ function readStringList(value) {
     return value.filter((item) => typeof item === "string" && item.trim().length > 0).map((item) => item.trim());
 }
 function resolveDataCreator(input) {
+    const policy = readCreatorPolicy();
+    if (policy === "locked")
+        return resolveLockedDataCreator(input);
     const explicit = optionalString(input.data_creator, "data_creator") ??
         optionalString(input.initiator_username, "initiator_username") ??
         optionalString(input.requester_username, "requester_username");
@@ -635,6 +638,30 @@ function resolveDataCreator(input) {
             return mapped.trim();
     }
     return fallback;
+}
+function readCreatorPolicy() {
+    const raw = envString("JIANDAOYUN_CREATOR_POLICY")?.toLowerCase();
+    if (raw === "locked" || raw === "strict" || raw === "trusted" || raw === "trusted_required")
+        return "locked";
+    return "caller";
+}
+function resolveLockedDataCreator(input) {
+    const candidates = [
+        optionalString(input.initiator_open_id, "initiator_open_id"),
+        optionalString(input.requester_open_id, "requester_open_id"),
+        optionalString(input.sender_open_id, "sender_open_id"),
+        optionalString(input.user_open_id, "user_open_id")
+    ].filter(Boolean);
+    if (candidates.length === 0) {
+        throw new Error("JIANDAOYUN_CREATOR_POLICY=locked: 创建记录必须提供可映射的 WeACT SenderId/open_id（sender_open_id、initiator_open_id、requester_open_id 或 user_open_id）。已拒绝写入，避免提交人被写成 creator 或被用户手动覆盖。");
+    }
+    const creatorMap = readCreatorMap();
+    for (const key of candidates) {
+        const mapped = creatorMap[key];
+        if (typeof mapped === "string" && mapped.trim().length > 0)
+            return mapped.trim();
+    }
+    throw new Error(`JIANDAOYUN_CREATOR_POLICY=locked: 发起人 open_id 未映射到简道云 username：${candidates.join(", ")}。请在 JIANDAOYUN_USER_MAP_FILE 中配置映射后再写入。`);
 }
 function envString(name) {
     const value = process.env[name];

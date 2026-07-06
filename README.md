@@ -89,7 +89,7 @@ jiandaoyun-openclaw install-template
 
 ## OpenClaw 一步式工具
 
-这些工具是 0.5.3 的推荐入口：
+这些工具是 0.5.4 的推荐入口：
 
 - `jdy_openclaw_doctor`：检查安装配置、私有域名、只读连通性和西北公司预设完整性。
 - `jdy_northwest_refresh_schema`：刷新西北公司应用/表单/字段缓存。
@@ -102,7 +102,7 @@ jiandaoyun-openclaw install-template
 
 ### 写入保护和提交人
 
-0.5.3 对 `jdy_northwest_create_record`、`jdy_northwest_update_record`、`jdy_assistant_create_record`、`jdy_assistant_update_record` 增加写入保护：
+0.5.4 对 `jdy_northwest_create_record`、`jdy_northwest_update_record`、`jdy_assistant_create_record`、`jdy_assistant_update_record` 增加写入保护：
 
 - 默认 `omit_empty_fields=true`：`null`、空字符串、空数组、空对象不会被提交。
 - 默认 `reject_unresolved_fields=true`：无法解析成简道云字段的中文字段名会被拒绝，不会原样写入。
@@ -112,22 +112,22 @@ jiandaoyun-openclaw install-template
 - 如果某个字段确实允许提交空值，显式放入 `allow_blank_fields`。
 - 如果其他表单的 API 没有返回必填标记，可以通过 `required_fields` 参数，或 `JIANDAOYUN_REQUIRED_FIELDS_JSON` / `JIANDAOYUN_REQUIRED_FIELDS_FILE` 配置业务必填字段。
 
-提交人使用简道云创建接口的 `data_creator`。上游如果能拿到发起人的简道云 username，可以直接传 `data_creator`、`initiator_username` 或 `requester_username`。在 WeACT/OpenClaw 中，优先把 SenderId 传为 `initiator_open_id` / `sender_open_id`，或把显示名传为 `initiator_name` / `sender_name`。也可以配置映射：
+提交人使用简道云创建接口的 `data_creator`。多人 WeACT/OpenClaw 助手建议启用锁定策略：
 
 ```bash
+export JIANDAOYUN_CREATOR_POLICY=locked
 export JIANDAOYUN_USER_MAP_FILE="$HOME/.openclaw-main/jiandaoyun-user-map.json"
 ```
 
-映射文件示例：
+锁定模式下，工具会忽略用户或模型传入的 `data_creator`、`initiator_username` 和显示名兜底，只接受 SenderId/open_id 通过映射文件解析出的简道云 username。映射文件示例：
 
 ```json
 {
-  "ou_xxx": "zhangsan",
-  "张三": "zhangsan"
+  "ou_xxx": "zhangsan"
 }
 ```
 
-然后在写入工具参数中传 `initiator_open_id` 或 `initiator_name`。如果没有映射，插件不会伪造提交人。单用户部署可设置 `JIANDAOYUN_DEFAULT_DATA_CREATOR` 作为兜底提交人；多人使用时不要依赖这个兜底。
+然后在写入工具参数中传 `sender_open_id` 或 `initiator_open_id`；如果 OpenClaw MCP runtime 传入 `_meta.sender_open_id`、`_meta.sender_id` 或 `_meta.user_open_id`，插件也会自动补为发起人 open_id。没有 open_id 或映射缺失时，锁定模式会拒绝写入，避免提交人落成 `creator` 或被用户手动覆盖。单用户部署可把 `JIANDAOYUN_CREATOR_POLICY` 设回 `caller` 并使用 `JIANDAOYUN_DEFAULT_DATA_CREATOR`，但不建议给多人助手使用。
 
 业务必填字段配置示例：
 

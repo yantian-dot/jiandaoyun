@@ -41,9 +41,14 @@
         "type": "string",
         "description": "Optional JSON object mapping app/form keys to business-required field label arrays."
       },
+      "JIANDAOYUN_CREATOR_POLICY": {
+        "type": "string",
+        "default": "locked",
+        "description": "Submitter policy. caller keeps backward-compatible explicit data_creator behavior; locked requires requester SenderId/open_id mapping and rejects fallback creators."
+      },
       "JIANDAOYUN_DEFAULT_DATA_CREATOR": {
         "type": "string",
-        "description": "Optional fallback Jiandaoyun username for data_creator when no requester identity is supplied. Use only for single-user deployments."
+        "description": "Optional fallback Jiandaoyun username for data_creator when no requester identity is supplied. Ignored when JIANDAOYUN_CREATOR_POLICY=locked."
       }
     },
     "required": [

@@ -5,7 +5,7 @@ import { tools } from "./tools.js";
 export function createServer(options = {}) {
     const server = new Server({
         name: "jiandaoyun-mcp-plugin",
-        version: "0.5.2"
+        version: "0.5.4"
     }, {
         capabilities: {
             tools: {}
@@ -54,6 +54,7 @@ function enrichToolArguments(value, request) {
             "weact_open_id",
             "user_open_id",
             "sender_open_id",
+            "sender_id",
             "operator_open_id",
             "open_id",
             "openId",

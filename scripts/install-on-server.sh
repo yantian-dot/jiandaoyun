@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-VERSION="0.5.3"
+VERSION="0.5.4"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PACKAGE_TGZ="${1:-${SCRIPT_DIR}/jiandaoyun-mcp-plugin-${VERSION}.tgz}"
 OPENCLAW_USER="${OPENCLAW_USER:-openclaw}"
@@ -73,6 +73,8 @@ servers.jiandaoyun.env = servers.jiandaoyun.env || {};
 servers.jiandaoyun.env.JIANDAOYUN_REQUIRED_FIELDS_FILE = `${process.env.HOME}/.openclaw-main/jiandaoyun-required-fields.json`;
 servers.jiandaoyun.env.JIANDAOYUN_USER_MAP_FILE = `${process.env.HOME}/.openclaw-main/jiandaoyun-user-map.json`;
 servers.jiandaoyun.env.JIANDAOYUN_TIMEOUT_MS = servers.jiandaoyun.env.JIANDAOYUN_TIMEOUT_MS || "30000";
+servers.jiandaoyun.env.JIANDAOYUN_CREATOR_POLICY = "locked";
+delete servers.jiandaoyun.env.JIANDAOYUN_DEFAULT_DATA_CREATOR;
 if (json.tools && Array.isArray(json.tools.deny)) {
   json.tools.deny = json.tools.deny.filter((item) => item !== "jiandaoyun__*");
   if (json.tools.deny.length === 0) delete json.tools.deny;
@@ -99,4 +101,4 @@ sudo -H -u "${OPENCLAW_USER}" bash -c 'set -euo pipefail; PATH="$HOME/.local/bin
 
 echo
 echo "After install, send /reset to the WeACT assistant before testing."
-echo "To make Jiandaoyun submitter equal the WeACT requester, fill $HOME/.openclaw-main/jiandaoyun-user-map.json with SenderId/display-name to Jiandaoyun username mappings."
+echo "Submitter policy is locked. Fill $HOME/.openclaw-main/jiandaoyun-user-map.json with SenderId/open_id to Jiandaoyun username mappings before write tests."

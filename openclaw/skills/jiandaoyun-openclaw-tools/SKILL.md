@@ -43,14 +43,14 @@ OpenClaw 中工具名可能带 MCP 命名空间，例如 `jiandaoyun__jdy_northw
 
 ## 发起人和提交人
 
-简道云提交人由创建接口的 `data_creator` 决定。不要传字面值 `creator`，也不要声称提交人已经是用户，除非工具请求里确实传入了可映射的发起人信息。
+简道云提交人由创建接口的 `data_creator` 决定。OpenClaw 服务器默认应配置 `JIANDAOYUN_CREATOR_POLICY=locked`。在锁定模式下，工具会忽略 `data_creator`、`initiator_username` 和显示名兜底，只接受 SenderId/open_id 通过 `JIANDAOYUN_USER_MAP_FILE` 映射出的简道云 username。
 
 在 WeACT 会话中：
 
-- 如果消息上下文有 SenderId 或 `ou_...`，传 `initiator_open_id`。
-- 如果只能看到发起人的显示名，传 `initiator_name`。
-- 如果已经知道简道云 username，传 `initiator_username` 或 `data_creator`。
-- 如果没有映射文件，工具可能无法把 `initiator_open_id` 或显示名转换为简道云 username。此时应说明“需要配置 `JIANDAOYUN_USER_MAP_FILE` 后才能保证提交人为发起人”，不要伪造。
+- 从消息上下文读取真实 SenderId（`ou_...`），优先传 `sender_open_id`，也可以传 `initiator_open_id`。
+- 不要让用户在自然语言中指定提交人，也不要传字面值 `creator`。
+- 如果没有 SenderId，或 `JIANDAOYUN_USER_MAP_FILE` 没有该 open_id 的映射，停止写入并说明需要先配置发起人映射。
+- 显示名可以用于回复用户，但不能作为锁定模式下的提交人依据。
 
 ## 安全边界
 
@@ -85,6 +85,6 @@ OpenClaw 中工具名可能带 MCP 命名空间，例如 `jiandaoyun__jdy_northw
     "作业详情": "按现场补充内容填写"
   },
   "required_fields": ["启机原因", "作业位置", "启动设备", "开始时间", "作业详情"],
-  "initiator_open_id": "ou_来自消息上下文的SenderId"
+  "sender_open_id": "ou_来自消息上下文的SenderId"
 }
 ```

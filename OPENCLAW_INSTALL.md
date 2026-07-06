@@ -3,13 +3,13 @@
 ## 1. 安装包
 
 ```bash
-npm install -g ./jiandaoyun-mcp-plugin-0.5.3.tgz
+npm install -g ./jiandaoyun-mcp-plugin-0.5.4.tgz
 ```
 
 也可以使用辅助脚本：
 
 ```bash
-./scripts/install-openclaw.sh ./jiandaoyun-mcp-plugin-0.5.3.tgz
+./scripts/install-openclaw.sh ./jiandaoyun-mcp-plugin-0.5.4.tgz
 ```
 
 ## 2. 添加到 OpenClaw
@@ -22,9 +22,10 @@ openclaw mcp add jiandaoyun \
   --env JIANDAOYUN_TIMEOUT_MS=30000
 ```
 
-如果需要把 WeACT 发起人映射为简道云提交人，可配置：
+如果需要把 WeACT 发起人映射为简道云提交人，可配置锁定策略：
 
 ```bash
+export JIANDAOYUN_CREATOR_POLICY=locked
 export JIANDAOYUN_USER_MAP_FILE="$HOME/.openclaw-main/jiandaoyun-user-map.json"
 ```
 
@@ -32,8 +33,7 @@ export JIANDAOYUN_USER_MAP_FILE="$HOME/.openclaw-main/jiandaoyun-user-map.json"
 
 ```json
 {
-  "ou_xxx": "zhangsan",
-  "张三": "zhangsan"
+  "ou_xxx": "zhangsan"
 }
 ```
 
@@ -53,7 +53,7 @@ export JIANDAOYUN_REQUIRED_FIELDS_FILE="$HOME/.openclaw-main/jiandaoyun-required
 }
 ```
 
-单用户部署可临时使用 `JIANDAOYUN_DEFAULT_DATA_CREATOR` 兜底提交人；多人使用时应优先传入发起人的 `initiator_name/open_id` 并配置映射。
+多人 WeACT 助手应使用 `locked`。在锁定模式下，未提供 SenderId/open_id 或映射缺失时会拒绝写入；`JIANDAOYUN_DEFAULT_DATA_CREATOR` 会被忽略。
 
 ## 3. 同步 OpenClaw Skill
 
@@ -65,7 +65,7 @@ ln -sfn "$(npm root -g)/jiandaoyun-mcp-plugin/openclaw/skills/jiandaoyun-opencla
   "$HOME/.openclaw-main/plugin-skills/jiandaoyun-openclaw-tools"
 ```
 
-服务器脚本 `scripts/install-on-server.sh` 会自动完成这一步，并会从 `tools.deny` 中移除 `jiandaoyun__*`。
+服务器脚本 `scripts/install-on-server.sh` 会自动完成这一步，并会从 `tools.deny` 中移除 `jiandaoyun__*`，同时设置 `JIANDAOYUN_CREATOR_POLICY=locked`。
 
 ## 4. 本地辅助命令
 
@@ -111,3 +111,4 @@ jdy_northwest_schema_status
 - `baseUrl` 不正确：应使用 `https://nocode.pipechina.com.cn`。
 - 找不到表单：先调用 `jdy_northwest_get_form_context` 缩小 `app_query` 和 `form_query`。
 - 字段名未解析：先调用 `jdy_northwest_refresh_schema` 或在查询时让工具实时拉取字段。
+- 写入时报 `JIANDAOYUN_CREATOR_POLICY=locked`：当前没有可映射的 SenderId/open_id，或 `$HOME/.openclaw-main/jiandaoyun-user-map.json` 未配置该 open_id 到简道云 username 的映射。
