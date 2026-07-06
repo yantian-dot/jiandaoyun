@@ -3,13 +3,13 @@
 ## 1. 安装包
 
 ```bash
-npm install -g ./jiandaoyun-mcp-plugin-0.5.4.tgz
+npm install -g ./jiandaoyun-mcp-plugin-0.5.5.tgz
 ```
 
 也可以使用辅助脚本：
 
 ```bash
-./scripts/install-openclaw.sh ./jiandaoyun-mcp-plugin-0.5.4.tgz
+./scripts/install-openclaw.sh ./jiandaoyun-mcp-plugin-0.5.5.tgz
 ```
 
 ## 2. 添加到 OpenClaw
@@ -27,15 +27,25 @@ openclaw mcp add jiandaoyun \
 ```bash
 export JIANDAOYUN_CREATOR_POLICY=locked
 export JIANDAOYUN_USER_MAP_FILE="$HOME/.openclaw-main/jiandaoyun-user-map.json"
+export JIANDAOYUN_WEACT_IDENTITY_LOOKUP=auto
+export JIANDAOYUN_WEACT_CLI_BIN=weact-cli
+export JIANDAOYUN_WEACT_CLI_AUTH=bot
 ```
 
 映射文件内容示例：
 
 ```json
 {
-  "ou_xxx": "zhangsan"
+  "ou_xxx": "zhangsan",
+  "zhangsan@example.com": "zhangsan",
+  "10086": {
+    "jdy_username": "zhangsan",
+    "weact_name": "张三"
+  }
 }
 ```
+
+锁定模式优先使用 `ou_xxx` 直接映射。直接映射缺失时，`0.5.5` 会尝试调用 `weact-cli contact +get-user --user-id <open_id> --as bot --format json`，再用返回的 `open_id`、`user_id`、`employee_no`、`email`、`enterprise_email` 等唯一字段查映射。只有确认 WeACT 姓名就是唯一简道云 username 时，才设置 `JIANDAOYUN_WEACT_CREATOR_FIELD=name`。
 
 不要把浏览器里的 `dashboard#/app/...` 地址填到 `JIANDAOYUN_BASE_URL`。
 
@@ -53,7 +63,7 @@ export JIANDAOYUN_REQUIRED_FIELDS_FILE="$HOME/.openclaw-main/jiandaoyun-required
 }
 ```
 
-多人 WeACT 助手应使用 `locked`。在锁定模式下，未提供 SenderId/open_id 或映射缺失时会拒绝写入；`JIANDAOYUN_DEFAULT_DATA_CREATOR` 会被忽略。
+多人 WeACT 助手应使用 `locked`。在锁定模式下，未提供 SenderId/open_id，或 direct map 与 WeACT 身份字段都无法解析为简道云 username 时会拒绝写入；`JIANDAOYUN_DEFAULT_DATA_CREATOR` 会被忽略。
 
 ## 3. 同步 OpenClaw Skill
 
@@ -111,4 +121,4 @@ jdy_northwest_schema_status
 - `baseUrl` 不正确：应使用 `https://nocode.pipechina.com.cn`。
 - 找不到表单：先调用 `jdy_northwest_get_form_context` 缩小 `app_query` 和 `form_query`。
 - 字段名未解析：先调用 `jdy_northwest_refresh_schema` 或在查询时让工具实时拉取字段。
-- 写入时报 `JIANDAOYUN_CREATOR_POLICY=locked`：当前没有可映射的 SenderId/open_id，或 `$HOME/.openclaw-main/jiandaoyun-user-map.json` 未配置该 open_id 到简道云 username 的映射。
+- 写入时报 `JIANDAOYUN_CREATOR_POLICY=locked`：当前没有可映射的 SenderId/open_id，或 `$HOME/.openclaw-main/jiandaoyun-user-map.json` 未配置该 open_id、工号或邮箱到简道云 username 的映射。先确认 `weact-cli contact +get-user --user-id <open_id> --as bot --format json` 能返回身份信息。

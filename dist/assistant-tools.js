@@ -1,5 +1,6 @@
 import { arraySchema, booleanSchema, inputObject, numberSchema, objectSchema, stringSchema } from "./json-schema.js";
 import { existsSync, readFileSync } from "node:fs";
+import { resolveDataCreator as resolveIdentityDataCreator } from "./creator-resolver.js";
 const stringArray = (description) => arraySchema(description, { type: "string" });
 export const assistantTools = [
     {
@@ -157,7 +158,7 @@ export const assistantTools = [
                 app_id: appId,
                 entry_id: entryId,
                 data: mapped.data,
-                data_creator: resolveDataCreator(input),
+                data_creator: await resolveIdentityDataCreator(input),
                 is_start_workflow: optionalBoolean(input.is_start_workflow, "is_start_workflow"),
                 is_start_trigger: optionalBoolean(input.is_start_trigger, "is_start_trigger"),
                 transaction_id: optionalString(input.transaction_id, "transaction_id")

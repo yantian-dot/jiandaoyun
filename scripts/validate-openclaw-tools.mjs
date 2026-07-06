@@ -53,6 +53,9 @@ assert(server?.command === "jiandaoyun-mcp", "openclaw/mcp.json must use the ins
 assert(server?.env?.JIANDAOYUN_API_KEY === "${JIANDAOYUN_API_KEY}", "openclaw/mcp.json must not contain a real API key");
 assert(server?.env?.JIANDAOYUN_USER_MAP_FILE, "openclaw/mcp.json should configure JIANDAOYUN_USER_MAP_FILE");
 assert(server?.env?.JIANDAOYUN_REQUIRED_FIELDS_FILE, "openclaw/mcp.json should configure JIANDAOYUN_REQUIRED_FIELDS_FILE");
+assert(server?.env?.JIANDAOYUN_CREATOR_POLICY === "locked", "openclaw/mcp.json should default JIANDAOYUN_CREATOR_POLICY to locked");
+assert(server?.env?.JIANDAOYUN_WEACT_IDENTITY_LOOKUP === "auto", "openclaw/mcp.json should enable WeACT identity lookup by default");
+assert(server?.env?.JIANDAOYUN_WEACT_CLI_BIN, "openclaw/mcp.json should configure JIANDAOYUN_WEACT_CLI_BIN");
 
 assert(packageJson.files?.includes("openclaw"), "package.json files must include openclaw");
 assert(packageJson.files?.includes("scripts"), "package.json files must include scripts");

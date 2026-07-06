@@ -43,14 +43,14 @@ OpenClaw 中工具名可能带 MCP 命名空间，例如 `jiandaoyun__jdy_northw
 
 ## 发起人和提交人
 
-简道云提交人由创建接口的 `data_creator` 决定。OpenClaw 服务器默认应配置 `JIANDAOYUN_CREATOR_POLICY=locked`。在锁定模式下，工具会忽略 `data_creator`、`initiator_username` 和显示名兜底，只接受 SenderId/open_id 通过 `JIANDAOYUN_USER_MAP_FILE` 映射出的简道云 username。
+简道云提交人由创建接口的 `data_creator` 决定。OpenClaw 服务器默认应配置 `JIANDAOYUN_CREATOR_POLICY=locked`。在锁定模式下，工具会忽略 `data_creator`、`initiator_username` 和显示名兜底，优先接受 SenderId/open_id 通过 `JIANDAOYUN_USER_MAP_FILE` 映射出的简道云 username。若直接映射缺失，0.5.5 可调用 `weact-cli contact +get-user` 读取发起人身份，并用工号、邮箱等唯一字段继续查映射。
 
 在 WeACT 会话中：
 
 - 从消息上下文读取真实 SenderId（`ou_...`），优先传 `sender_open_id`，也可以传 `initiator_open_id`。
 - 不要让用户在自然语言中指定提交人，也不要传字面值 `creator`。
-- 如果没有 SenderId，或 `JIANDAOYUN_USER_MAP_FILE` 没有该 open_id 的映射，停止写入并说明需要先配置发起人映射。
-- 显示名可以用于回复用户，但不能作为锁定模式下的提交人依据。
+- 如果没有 SenderId，或 direct map 与 WeACT 身份字段都无法解析成简道云 username，停止写入并说明需要先配置发起人映射。
+- 显示名可以用于回复用户。除非管理员显式设置 `JIANDAOYUN_WEACT_CREATOR_FIELD=name`，否则显示名不能作为锁定模式下的提交人依据。
 
 ## 安全边界
 

@@ -14,13 +14,13 @@ It is not a full OpenClaw channel plugin. It keeps the verified MCP server as th
 Install the package first:
 
 ```bash
-npm install -g ./jiandaoyun-mcp-plugin-0.5.4.tgz
+npm install -g ./jiandaoyun-mcp-plugin-0.5.5.tgz
 ```
 
 Or use the helper script from the unpacked project directory:
 
 ```bash
-./scripts/install-openclaw.sh ./jiandaoyun-mcp-plugin-0.5.4.tgz
+./scripts/install-openclaw.sh ./jiandaoyun-mcp-plugin-0.5.5.tgz
 ```
 
 Then add the MCP server in OpenClaw:
@@ -98,4 +98,4 @@ Examples:
 - Use raw `jdy_data_*` tools only when exact field IDs and API bodies are already known.
 - Use delete, workflow approval, department import, and contact management tools only after explicit user confirmation.
 - For writes, do not send blank values for fields the user did not mention. If required fields are missing, ask a follow-up question before creating the record.
-- To make the Jiandaoyun submitter equal the WeACT requester, keep `JIANDAOYUN_CREATOR_POLICY=locked`, pass the real SenderId/open_id through `sender_open_id` or `initiator_open_id`, and configure `JIANDAOYUN_USER_MAP_FILE`. Do not use display names as locked-mode submitter evidence.
+- To make the Jiandaoyun submitter equal the WeACT requester, keep `JIANDAOYUN_CREATOR_POLICY=locked`, pass the real SenderId/open_id through `sender_open_id` or `initiator_open_id`, and configure `JIANDAOYUN_USER_MAP_FILE`. Version 0.5.5 can use `weact-cli contact +get-user` to resolve unique identity fields such as employee number or email when the direct open_id map is missing. Do not use display names as locked-mode submitter evidence unless `JIANDAOYUN_WEACT_CREATOR_FIELD=name` is explicitly configured and names are guaranteed unique Jiandaoyun usernames.

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-VERSION="0.5.4"
+VERSION="0.5.5"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PACKAGE_TGZ="${1:-${SCRIPT_DIR}/jiandaoyun-mcp-plugin-${VERSION}.tgz}"
 OPENCLAW_USER="${OPENCLAW_USER:-openclaw}"
@@ -34,6 +34,8 @@ fi
 
 sudo install -m 0644 "${PACKAGE_TGZ}" "${REMOTE_TGZ}"
 
+echo "Package verified: ${PACKAGE_TGZ}"
+echo "Copied package to ${REMOTE_TGZ}"
 echo "Installing jiandaoyun-mcp-plugin ${VERSION} for user ${OPENCLAW_USER}..."
 sudo -H -u "${OPENCLAW_USER}" bash -c "set -euxo pipefail; PATH=\"\$HOME/.local/bin:/usr/local/bin:/usr/bin:/bin:/usr/local/sbin:/usr/sbin:/sbin:/snap/bin\"; ls -lh '${REMOTE_TGZ}'; tar -tzf '${REMOTE_TGZ}' >/dev/null; node -v; npm -v; npm install -g '${REMOTE_TGZ}'; npm list -g --depth=0 jiandaoyun-mcp-plugin; command -v jiandaoyun-mcp"
 
@@ -74,6 +76,10 @@ servers.jiandaoyun.env.JIANDAOYUN_REQUIRED_FIELDS_FILE = `${process.env.HOME}/.o
 servers.jiandaoyun.env.JIANDAOYUN_USER_MAP_FILE = `${process.env.HOME}/.openclaw-main/jiandaoyun-user-map.json`;
 servers.jiandaoyun.env.JIANDAOYUN_TIMEOUT_MS = servers.jiandaoyun.env.JIANDAOYUN_TIMEOUT_MS || "30000";
 servers.jiandaoyun.env.JIANDAOYUN_CREATOR_POLICY = "locked";
+servers.jiandaoyun.env.JIANDAOYUN_WEACT_IDENTITY_LOOKUP = servers.jiandaoyun.env.JIANDAOYUN_WEACT_IDENTITY_LOOKUP || "auto";
+servers.jiandaoyun.env.JIANDAOYUN_WEACT_CLI_BIN = servers.jiandaoyun.env.JIANDAOYUN_WEACT_CLI_BIN || "weact-cli";
+servers.jiandaoyun.env.JIANDAOYUN_WEACT_CLI_AUTH = servers.jiandaoyun.env.JIANDAOYUN_WEACT_CLI_AUTH || "bot";
+servers.jiandaoyun.env.JIANDAOYUN_WEACT_IDENTITY_TIMEOUT_MS = servers.jiandaoyun.env.JIANDAOYUN_WEACT_IDENTITY_TIMEOUT_MS || "5000";
 delete servers.jiandaoyun.env.JIANDAOYUN_DEFAULT_DATA_CREATOR;
 if (json.tools && Array.isArray(json.tools.deny)) {
   json.tools.deny = json.tools.deny.filter((item) => item !== "jiandaoyun__*");
@@ -101,4 +107,6 @@ sudo -H -u "${OPENCLAW_USER}" bash -c 'set -euo pipefail; PATH="$HOME/.local/bin
 
 echo
 echo "After install, send /reset to the WeACT assistant before testing."
-echo "Submitter policy is locked. Fill $HOME/.openclaw-main/jiandaoyun-user-map.json with SenderId/open_id to Jiandaoyun username mappings before write tests."
+echo "Submitter policy is locked. Direct SenderId/open_id mappings still take priority."
+echo "If a SenderId is not mapped, the plugin will try weact-cli contact +get-user and then map unique identity fields such as open_id, user_id, employee_no, or email."
+echo "Only set JIANDAOYUN_WEACT_CREATOR_FIELD=name if WeACT names are guaranteed to equal unique Jiandaoyun usernames."

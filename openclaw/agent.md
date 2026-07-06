@@ -73,7 +73,7 @@ The server installer does this automatically.
 - If a form has business-required fields that the API does not mark as required, pass them through `required_fields` or configure `JIANDAOYUN_REQUIRED_FIELDS_FILE`.
 - For `机械队发电统计`, do not create a record until at least `启机原因`, `作业位置`, `启动设备`, and `开始时间` are known. If the running form also marks `作业详情` as required, ask for it before calling a create tool.
 - To intentionally clear a field, use `clear_fields`; do not send an empty string as an implicit clear operation.
-- For WeACT chats, pass the real message SenderId as `sender_open_id` or `initiator_open_id` so the plugin can resolve Jiandaoyun `data_creator` through `JIANDAOYUN_USER_MAP_FILE`. In locked creator mode, do not pass `data_creator`, `initiator_username`, or display-name aliases as submitter evidence. If no SenderId/open_id mapping is known, stop before writing and ask for runtime mapping configuration.
+- For WeACT chats, pass the real message SenderId as `sender_open_id` or `initiator_open_id` so the plugin can resolve Jiandaoyun `data_creator` through `JIANDAOYUN_USER_MAP_FILE`. Version 0.5.5 may call `weact-cli contact +get-user` to map employee number or email when direct open_id mapping is absent. In locked creator mode, do not pass `data_creator`, `initiator_username`, or display-name aliases as submitter evidence. If no SenderId/open_id or WeACT identity mapping is known, stop before writing and ask for runtime mapping configuration.
 
 ## Common Intents
 

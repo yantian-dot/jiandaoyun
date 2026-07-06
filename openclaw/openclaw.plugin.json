@@ -27,11 +27,11 @@
       },
       "JIANDAOYUN_USER_MAP_FILE": {
         "type": "string",
-        "description": "Optional JSON file mapping upstream requester IDs or names to Jiandaoyun usernames."
+        "description": "Optional JSON file mapping upstream requester SenderId/open_id or unique WeACT identity fields to Jiandaoyun usernames."
       },
       "JIANDAOYUN_USER_MAP_JSON": {
         "type": "string",
-        "description": "Optional JSON object mapping upstream requester IDs or names to Jiandaoyun usernames."
+        "description": "Optional JSON object mapping upstream requester SenderId/open_id or unique WeACT identity fields to Jiandaoyun usernames."
       },
       "JIANDAOYUN_REQUIRED_FIELDS_FILE": {
         "type": "string",
@@ -44,7 +44,30 @@
       "JIANDAOYUN_CREATOR_POLICY": {
         "type": "string",
         "default": "locked",
-        "description": "Submitter policy. caller keeps backward-compatible explicit data_creator behavior; locked requires requester SenderId/open_id mapping and rejects fallback creators."
+        "description": "Submitter policy. caller keeps backward-compatible explicit data_creator behavior; locked requires requester SenderId/open_id or WeACT identity mapping and rejects fallback creators."
+      },
+      "JIANDAOYUN_WEACT_IDENTITY_LOOKUP": {
+        "type": "string",
+        "default": "auto",
+        "description": "When locked-mode direct mapping is missing, auto calls weact-cli to resolve requester identity. Set off to disable."
+      },
+      "JIANDAOYUN_WEACT_CLI_BIN": {
+        "type": "string",
+        "default": "weact-cli",
+        "description": "WeACT CLI executable used for contact +get-user identity lookup."
+      },
+      "JIANDAOYUN_WEACT_CLI_AUTH": {
+        "type": "string",
+        "default": "bot",
+        "description": "Identity mode passed to weact-cli contact +get-user, usually bot for OpenClaw servers."
+      },
+      "JIANDAOYUN_WEACT_IDENTITY_MAP_FIELDS": {
+        "type": "string",
+        "description": "Comma-separated WeACT identity fields accepted as keys in the user map, for example employee_no,email,enterprise_email."
+      },
+      "JIANDAOYUN_WEACT_CREATOR_FIELD": {
+        "type": "string",
+        "description": "Optional trusted WeACT identity field to use directly as Jiandaoyun data_creator. Do not set to name unless names are unique Jiandaoyun usernames."
       },
       "JIANDAOYUN_DEFAULT_DATA_CREATOR": {
         "type": "string",

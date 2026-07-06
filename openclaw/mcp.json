@@ -9,7 +9,10 @@
         "JIANDAOYUN_TIMEOUT_MS": "30000",
         "JIANDAOYUN_USER_MAP_FILE": "${HOME}/.openclaw-main/jiandaoyun-user-map.json",
         "JIANDAOYUN_REQUIRED_FIELDS_FILE": "${HOME}/.openclaw-main/jiandaoyun-required-fields.json",
-        "JIANDAOYUN_CREATOR_POLICY": "locked"
+        "JIANDAOYUN_CREATOR_POLICY": "locked",
+        "JIANDAOYUN_WEACT_IDENTITY_LOOKUP": "auto",
+        "JIANDAOYUN_WEACT_CLI_BIN": "weact-cli",
+        "JIANDAOYUN_WEACT_CLI_AUTH": "bot"
       }
     }
   }

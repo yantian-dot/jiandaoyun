@@ -5,7 +5,7 @@ import { tools } from "./tools.js";
 export function createServer(options = {}) {
     const server = new Server({
         name: "jiandaoyun-mcp-plugin",
-        version: "0.5.4"
+        version: "0.5.5"
     }, {
         capabilities: {
             tools: {}

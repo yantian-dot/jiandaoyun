@@ -17,7 +17,7 @@ WeACT 消息 -> openclaw-weact channel -> OpenClaw agent -> jiandaoyun MCP tools
 - `scripts/install-on-server.sh` 会把 skill 链接到 `$HOME/.openclaw-main/plugin-skills/jiandaoyun-openclaw-tools`。
 - 安装脚本会从 `tools.deny` 中移除 `jiandaoyun__*`，防止 MCP probe 正常但助手运行时仍无法调用。
 - 创建记录时增强必填字段识别，并支持 `required_fields` / `JIANDAOYUN_REQUIRED_FIELDS_FILE` 处理 API 未暴露的业务必填字段。
-- 创建记录时增加 `JIANDAOYUN_CREATOR_POLICY=locked`，锁定模式下只接受 SenderId/open_id 映射出的简道云提交人，拒绝 `data_creator` 和显示名兜底。
+- 创建记录时增加 `JIANDAOYUN_CREATOR_POLICY=locked`，锁定模式下优先接受 SenderId/open_id 映射出的简道云提交人；如果 direct map 缺失，可用 `weact-cli` 查询发起人身份，再通过工号/邮箱等唯一字段映射到简道云 username。默认拒绝用户传入的 `data_creator` 和显示名兜底。
 
 ## 运行时验证
 
@@ -59,11 +59,12 @@ journalctl -u openclaw-main-gateway.service --since "5 minutes ago" --no-pager |
 
 ## 提交人映射
 
-简道云创建接口只能接收 `data_creator`。如果要让提交人显示为 WeACT 发起人，需要把 WeACT SenderId/open_id 映射到简道云 username：
+简道云创建接口只能接收 `data_creator`。如果要让提交人显示为 WeACT 发起人，需要把 WeACT SenderId/open_id 或 WeACT 身份唯一字段映射到简道云 username：
 
 ```json
 {
-  "ou_xxx": "jiandaoyun_username"
+  "ou_xxx": "jiandaoyun_username",
+  "employee_no_or_email": "jiandaoyun_username"
 }
 ```
 
@@ -77,6 +78,11 @@ $HOME/.openclaw-main/jiandaoyun-user-map.json
 
 ```text
 JIANDAOYUN_CREATOR_POLICY=locked
+JIANDAOYUN_WEACT_IDENTITY_LOOKUP=auto
+JIANDAOYUN_WEACT_CLI_BIN=weact-cli
+JIANDAOYUN_WEACT_CLI_AUTH=bot
 ```
 
-没有 SenderId/open_id 或映射缺失时，工具会在写入前拒绝创建记录。这属于运行时配置缺失，不是前端页面刷新问题。真正不可篡改的发起人仍依赖 OpenClaw/weact 在消息上下文中提供真实 SenderId；插件侧会拒绝用户手动指定 `data_creator` 来覆盖提交人。
+没有 SenderId/open_id，或 direct map 与 WeACT 身份字段都无法解析成简道云 username 时，工具会在写入前拒绝创建记录。这属于运行时配置缺失，不是前端页面刷新问题。真正不可篡改的发起人仍依赖 OpenClaw/weact 在消息上下文中提供真实 SenderId；插件侧会拒绝用户手动指定 `data_creator` 来覆盖提交人。
+
+如果组织确认 WeACT 姓名等于唯一简道云 username，可以显式设置 `JIANDAOYUN_WEACT_CREATOR_FIELD=name`。存在重名、昵称或姓名不等于账号时不要启用这个字段。
