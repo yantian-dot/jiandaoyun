@@ -78,6 +78,10 @@
         "type": "string",
         "description": "Comma-separated WeACT identity fields accepted as keys in the user map, for example employee_no,email,enterprise_email."
       },
+      "JIANDAOYUN_WEACT_CONTACT_MATCH_FIELDS": {
+        "type": "string",
+        "description": "Comma-separated WeACT identity fields used for automatic Jiandaoyun contact matching when direct user-map lookup is missing. Defaults include email, employee numbers, and display names."
+      },
       "JIANDAOYUN_WEACT_CREATOR_FIELD": {
         "type": "string",
         "description": "Optional trusted WeACT identity field to use directly as Jiandaoyun data_creator. Do not set to name unless names are unique Jiandaoyun usernames."

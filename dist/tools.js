@@ -37,7 +37,7 @@ const makePostTool = (options) => ({
     inputSchema: options.inputSchema,
     handler: async (input, client) => {
         const path = typeof options.path === "function" ? options.path(input) : options.path;
-        const body = options.body ? await options.body(input) : bodyOnly(input);
+        const body = options.body ? await options.body(input, client) : bodyOnly(input);
         return client.post(path, body);
     }
 });
@@ -107,9 +107,9 @@ export const coreTools = [
             is_start_trigger: booleanSchema("Whether to trigger Jiandaoyun assistant."),
             transaction_id: stringSchema("Optional transaction ID, required when binding uploaded files.")
         }, ["app_id", "entry_id", "data"]),
-        body: async (input) => {
+        body: async (input, client) => {
             const body = pickBody(["app_id", "entry_id", "data", "is_start_workflow", "is_start_trigger", "transaction_id"])(input);
-            const creator = await resolveIdentityDataCreator(input);
+            const creator = await resolveIdentityDataCreator(input, client);
             if (creator)
                 body.data_creator = creator;
             return body;
@@ -127,9 +127,9 @@ export const coreTools = [
             is_start_workflow: booleanSchema("Whether to start workflow for workflow forms."),
             transaction_id: stringSchema("Transaction ID for retry/file binding.")
         }, ["app_id", "entry_id", "data_list"]),
-        body: async (input) => {
+        body: async (input, client) => {
             const body = pickBody(["app_id", "entry_id", "data_list", "is_start_workflow", "transaction_id"])(input);
-            const creator = await resolveIdentityDataCreator(input);
+            const creator = await resolveIdentityDataCreator(input, client);
             if (creator)
                 body.data_creator = creator;
             return body;
@@ -281,7 +281,7 @@ export const coreTools = [
             const path = requireString(input.path, "path");
             const body = asObject(input.body, "body");
             if (isDataCreatePath(path)) {
-                const creator = await resolveIdentityDataCreator(input);
+                const creator = await resolveIdentityDataCreator(input, client);
                 return client.rawPost(path, creator ? { ...body, data_creator: creator } : body);
             }
             return client.rawPost(path, body);

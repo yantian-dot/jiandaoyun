@@ -1,5 +1,6 @@
 import { existsSync, readFileSync } from "node:fs";
 import { spawnSync } from "node:child_process";
+import { resolveJdyUser } from "./value-resolver.js";
 
 const DEFAULT_WEACT_IDENTITY_MAP_FIELDS = [
     "open_id",
@@ -15,10 +16,10 @@ const DEFAULT_WEACT_IDENTITY_MAP_FIELDS = [
     "mail"
 ];
 
-export async function resolveDataCreator(input) {
+export async function resolveDataCreator(input, client) {
     const policy = readCreatorPolicy();
     if (policy === "locked")
-        return resolveLockedDataCreator(input);
+        return resolveLockedDataCreator(input, client);
     const explicit = optionalString(input.data_creator, "data_creator") ??
         optionalString(input.initiator_username, "initiator_username") ??
         optionalString(input.requester_username, "requester_username");
@@ -48,7 +49,7 @@ function readCreatorPolicy() {
     return "caller";
 }
 
-function resolveLockedDataCreator(input) {
+async function resolveLockedDataCreator(input, client) {
     const openIds = uniqueStrings([
         optionalString(input.initiator_open_id, "initiator_open_id"),
         optionalString(input.requester_open_id, "requester_open_id"),
@@ -80,10 +81,39 @@ function resolveLockedDataCreator(input) {
                 if (creator)
                     return creator;
             }
+            if (client) {
+                const contactResult = await resolveCreatorFromJdyContacts(client, identityResult.identity);
+                diagnostics.push(contactResult.diagnostic);
+                if (contactResult.username)
+                    return contactResult.username;
+            }
         }
     }
     const extra = diagnostics.filter(Boolean).length > 0 ? `；WeACT 身份解析结果：${diagnostics.filter(Boolean).join("；")}` : "";
     throw new Error(`JIANDAOYUN_CREATOR_POLICY=locked: 发起人 open_id 未映射到简道云 username：${openIds.join(", ")}。请在 JIANDAOYUN_USER_MAP_FILE 中配置映射，或配置 JIANDAOYUN_WEACT_CREATOR_FIELD 作为显式可信字段后再写入${extra}。`);
+}
+
+async function resolveCreatorFromJdyContacts(client, identity) {
+    const candidates = collectIdentityContactCandidates(identity);
+    if (candidates.length === 0) {
+        return { username: undefined, diagnostic: "WeACT 身份中没有可用于简道云通讯录匹配的姓名、邮箱或工号" };
+    }
+    const errors = [];
+    for (const candidate of candidates) {
+        try {
+            const user = await resolveJdyUser(client, candidate);
+            if (user.username) {
+                return { username: user.username, diagnostic: `简道云通讯录匹配成功 ${candidate} -> ${user.username}` };
+            }
+        }
+        catch (error) {
+            errors.push(`${candidate}: ${error instanceof Error ? error.message : String(error)}`);
+        }
+    }
+    return {
+        username: undefined,
+        diagnostic: `简道云通讯录自动匹配失败：${truncate(errors.join("；"), 360)}`
+    };
 }
 
 function readWeactIdentityLookupMode() {
@@ -190,6 +220,24 @@ function unwrapIdentity(value) {
 function collectIdentityMapCandidates(identity) {
     const fields = parseCsv(envString("JIANDAOYUN_WEACT_IDENTITY_MAP_FIELDS"))
         .concat(DEFAULT_WEACT_IDENTITY_MAP_FIELDS);
+    return uniqueStrings(identityFieldValues(identity, fields));
+}
+
+function collectIdentityContactCandidates(identity) {
+    const fields = parseCsv(envString("JIANDAOYUN_WEACT_CONTACT_MATCH_FIELDS")).concat([
+        "email",
+        "enterprise_email",
+        "mail",
+        "employee_no",
+        "employee_number",
+        "job_number",
+        "work_id",
+        "employee_id",
+        "name",
+        "user_name",
+        "display_name",
+        "employee_name"
+    ]);
     return uniqueStrings(identityFieldValues(identity, fields));
 }
 

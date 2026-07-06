@@ -159,7 +159,7 @@ export const assistantTools = [
                 app_id: appId,
                 entry_id: entryId,
                 data: mapped.data,
-                data_creator: await resolveIdentityDataCreator(input),
+                data_creator: await resolveIdentityDataCreator(input, client),
                 is_start_workflow: optionalBoolean(input.is_start_workflow, "is_start_workflow"),
                 is_start_trigger: optionalBoolean(input.is_start_trigger, "is_start_trigger"),
                 transaction_id: optionalString(input.transaction_id, "transaction_id")

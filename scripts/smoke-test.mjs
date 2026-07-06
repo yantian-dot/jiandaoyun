@@ -130,6 +130,26 @@ printf '%s\\n' '{"user":{"open_id":"ou_cli","name":"张通","enterprise_email":"
   if (cliCreateCall.body.data_creator !== "zhangtong01") {
     throw new Error(`expected mapped creator zhangtong01, got ${cliCreateCall.body.data_creator ?? "undefined"}`);
   }
+
+  writeFileSync(fakeWeactCli, `#!/usr/bin/env bash
+printf '%s\\n' '{"user":{"open_id":"ou_auto","name":"邢宇嘉"}}'
+`);
+  process.env.JIANDAOYUN_USER_MAP_JSON = JSON.stringify({});
+
+  calls.length = 0;
+  await createTool.handler({
+    app_id: "app",
+    entry_id: "entry",
+    values: { Reason: "startup test" },
+    sender_open_id: "ou_auto"
+  }, client);
+  const contactCreateCall = calls.find((call) => call.path.endsWith("/data/create"));
+  if (!contactCreateCall) {
+    throw new Error("create API was not called for contact-based creator mapping");
+  }
+  if (contactCreateCall.body.data_creator !== "xjy") {
+    throw new Error(`expected contact-based creator xjy, got ${contactCreateCall.body.data_creator ?? "undefined"}`);
+  }
   rmSync(tempDir, { recursive: true, force: true });
   tempDir = undefined;
 
@@ -140,7 +160,8 @@ printf '%s\\n' '{"user":{"open_id":"ou_cli","name":"张通","enterprise_email":"
       "sender open_id maps to data_creator",
       "usergroup display names resolve to Jiandaoyun usernames",
       "core create ignores manual data_creator under locked policy",
-      "unmapped sender can resolve via weact-cli identity and unique-field map"
+      "unmapped sender can resolve via weact-cli identity and unique-field map",
+      "weact-cli display name can resolve data_creator through Jiandaoyun contacts"
     ]
   }, null, 2));
 } finally {

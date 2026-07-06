@@ -32,7 +32,7 @@ export async function resolveJdyFieldValue(client, widget, rawValue) {
     };
 }
 
-async function resolveJdyUser(client, input) {
+export async function resolveJdyUser(client, input) {
     const mapped = readMemberMapValue(input);
     if (mapped) {
         const user = await getUserByUsername(client, mapped);
