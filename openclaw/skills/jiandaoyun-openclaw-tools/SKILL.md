@@ -41,15 +41,15 @@ OpenClaw 中工具名可能带 MCP 命名空间，例如 `jiandaoyun__jdy_northw
 
 对 `机械队发电统计`，至少要求 `启机原因`、`作业位置`、`启动设备`、`开始时间`。如果运行现场已把 `作业详情` 或其他字段设置为必填，也要把它们纳入 `required_fields`，未提供时先追问。
 
-简道云 `user` / `usergroup` 字段不是普通文本。用户说“参与人员邢宇嘉”时，仍然在 `values` 中填写显示名；0.5.7 写入前会把显示名解析为简道云通讯录成员对象。若同名或查不到成员，停止写入并要求用户提供简道云 username，或让管理员配置 `JIANDAOYUN_MEMBER_MAP_FILE`。
+简道云 `user` / `usergroup` 字段不是普通文本。用户说“参与人员邢宇嘉”时，仍然在 `values` 中填写显示名；0.5.8 写入前会把显示名解析为简道云通讯录成员对象。若同名或查不到成员，停止写入并要求用户提供简道云 username，或让管理员配置 `JIANDAOYUN_MEMBER_MAP_FILE`。
 
 ## 发起人和提交人
 
-简道云提交人由创建接口的 `data_creator` 决定。OpenClaw 服务器默认应配置 `JIANDAOYUN_CREATOR_POLICY=locked`。在锁定模式下，工具会忽略 `data_creator`、`initiator_username` 和显示名兜底，优先接受 SenderId/open_id 通过 `JIANDAOYUN_USER_MAP_FILE` 映射出的简道云 username。若直接映射缺失，0.5.7 可调用 `weact-cli contact +get-user` 读取发起人身份，并用工号、邮箱等唯一字段继续查映射；如果映射仍缺失，会继续用 WeACT 身份中的姓名、邮箱或工号去简道云通讯录唯一匹配。0.5.7 同时把底层 `jdy_data_create`、`jdy_data_batch_create` 和面向创建接口的 `jdy_raw_post` 纳入 locked 策略，避免绕过推荐工具手写提交人。
+简道云提交人由创建接口的 `data_creator` 决定。OpenClaw 服务器默认应配置 `JIANDAOYUN_CREATOR_POLICY=locked`。在锁定模式下，工具会忽略 `data_creator`、`initiator_username` 和显示名兜底，优先接受 SenderId/open_id 通过 `JIANDAOYUN_USER_MAP_FILE` 映射出的简道云 username。若直接映射缺失，0.5.8 可调用 `weact-cli contact +get-user` 读取发起人身份，并用工号、邮箱等唯一字段继续查映射；如果映射仍缺失，会继续用 WeACT 身份中的姓名、邮箱或工号去简道云通讯录唯一匹配。0.5.8 同时把底层 `jdy_data_create`、`jdy_data_batch_create` 和面向创建接口的 `jdy_raw_post` 纳入 locked 策略，避免绕过推荐工具手写提交人。
 
 在 WeACT 会话中：
 
-- 从消息上下文读取真实 SenderId（`ou_...`），优先传 `sender_open_id`，也可以传 `initiator_open_id`。
+- 从消息上下文读取真实 SenderId（`ou_...`），优先传 `sender_open_id`，也可以传 `initiator_open_id`；如果 runtime 在 MCP `_meta` 中传 `senderOpenId` / `sender_open_id` / `userOpenId`，0.5.8 会自动补齐。
 - 不要让用户在自然语言中指定提交人，也不要传字面值 `creator`。
 - 如果没有 SenderId，或 direct map 与 WeACT 身份字段都无法解析成简道云 username，停止写入并说明需要先配置发起人映射。
 - 显示名可以用于回复用户。除非管理员显式设置 `JIANDAOYUN_WEACT_CREATOR_FIELD=name`，否则显示名不能作为锁定模式下的提交人依据。

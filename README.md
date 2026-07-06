@@ -89,7 +89,7 @@ jiandaoyun-openclaw install-template
 
 ## OpenClaw 一步式工具
 
-这些工具是 0.5.7 的推荐入口：
+这些工具是 0.5.8 的推荐入口：
 
 - `jdy_openclaw_doctor`：检查安装配置、私有域名、只读连通性和西北公司预设完整性。
 - `jdy_northwest_refresh_schema`：刷新西北公司应用/表单/字段缓存。
@@ -102,7 +102,7 @@ jiandaoyun-openclaw install-template
 
 ### 写入保护和提交人
 
-0.5.7 对 `jdy_northwest_create_record`、`jdy_northwest_update_record`、`jdy_assistant_create_record`、`jdy_assistant_update_record` 增加写入保护，并把 `jdy_data_create`、`jdy_data_batch_create`、面向创建接口的 `jdy_raw_post` 纳入提交人锁定策略：
+0.5.8 对 `jdy_northwest_create_record`、`jdy_northwest_update_record`、`jdy_assistant_create_record`、`jdy_assistant_update_record` 增加写入保护，并把 `jdy_data_create`、`jdy_data_batch_create`、面向创建接口的 `jdy_raw_post` 纳入提交人锁定策略：
 
 - 默认 `omit_empty_fields=true`：`null`、空字符串、空数组、空对象不会被提交。
 - 默认 `reject_unresolved_fields=true`：无法解析成简道云字段的中文字段名会被拒绝，不会原样写入。
@@ -146,7 +146,7 @@ export JIANDAOYUN_WEACT_CLI_AUTH=bot
 }
 ```
 
-然后在写入工具参数中传 `sender_open_id` 或 `initiator_open_id`；如果 OpenClaw MCP runtime 传入 `_meta.sender_open_id`、`_meta.sender_id` 或 `_meta.user_open_id`，插件也会自动补为发起人 open_id。没有 open_id、WeACT 身份无法读取、简道云通讯录无权限、或通讯录匹配不唯一时，锁定模式会拒绝写入，避免提交人落成 `creator` 或被用户手动覆盖。单用户部署可把 `JIANDAOYUN_CREATOR_POLICY` 设回 `caller` 并使用 `JIANDAOYUN_DEFAULT_DATA_CREATOR`，但不建议给多人助手使用。
+然后在写入工具参数中传 `sender_open_id` 或 `initiator_open_id`；如果 OpenClaw MCP runtime 传入 `_meta.senderOpenId`、`_meta.sender_open_id`、`_meta.senderId`、`_meta.sender_id`、`_meta.userOpenId`、`_meta.user_open_id` 等字段，插件也会自动补为发起人 open_id。没有 open_id、WeACT 身份无法读取、简道云通讯录无权限、或通讯录匹配不唯一时，锁定模式会拒绝写入，避免提交人落成 `creator` 或被用户手动覆盖。单用户部署可把 `JIANDAOYUN_CREATOR_POLICY` 设回 `caller` 并使用 `JIANDAOYUN_DEFAULT_DATA_CREATOR`，但不建议给多人助手使用。
 
 人员字段映射文件示例：
 

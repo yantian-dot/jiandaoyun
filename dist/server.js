@@ -5,7 +5,7 @@ import { tools } from "./tools.js";
 export function createServer(options = {}) {
     const server = new Server({
         name: "jiandaoyun-mcp-plugin",
-        version: "0.5.7"
+        version: "0.5.8"
     }, {
         capabilities: {
             tools: {}
@@ -51,15 +51,26 @@ function enrichToolArguments(value, request) {
     if (!args.initiator_open_id) {
         const openId = firstMetaString(metaSources, [
             "initiator_open_id",
+            "initiatorOpenId",
             "weact_open_id",
+            "weactOpenId",
             "user_open_id",
+            "userOpenId",
             "sender_open_id",
+            "senderOpenId",
             "sender_id",
+            "senderId",
             "operator_open_id",
+            "operatorOpenId",
             "open_id",
             "openId",
+            "openID",
             "userId",
-            "user_id"
+            "user_id",
+            "senderUserId",
+            "sender_user_id",
+            "operatorUserId",
+            "operator_user_id"
         ]);
         if (openId)
             args.initiator_open_id = openId;

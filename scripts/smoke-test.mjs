@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { assistantTools } from "../dist/assistant-tools.js";
 import { tools } from "../dist/tools.js";
-import { chmodSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { chmodSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 
@@ -90,6 +90,13 @@ try {
     throw new Error(`expected member name to resolve to usergroup username xjy, got ${JSON.stringify(memberValue)}`);
   }
 
+  const serverSource = readFileSync(new URL("../dist/server.js", import.meta.url), "utf8");
+  for (const metaKey of ["senderOpenId", "userOpenId", "operatorOpenId", "senderUserId"]) {
+    if (!serverSource.includes(`"${metaKey}"`)) {
+      throw new Error(`expected MCP metadata key ${metaKey} to be recognized in dist/server.js`);
+    }
+  }
+
   calls.length = 0;
   await rawCreateTool.handler({
     app_id: "app",
@@ -158,6 +165,7 @@ printf '%s\\n' '{"user":{"open_id":"ou_auto","name":"邢宇嘉"}}'
     checks: [
       "locked policy blocks missing sender",
       "sender open_id maps to data_creator",
+      "MCP camelCase requester metadata keys are recognized",
       "usergroup display names resolve to Jiandaoyun usernames",
       "core create ignores manual data_creator under locked policy",
       "unmapped sender can resolve via weact-cli identity and unique-field map",
