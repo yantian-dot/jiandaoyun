@@ -89,20 +89,20 @@ jiandaoyun-openclaw install-template
 
 ## OpenClaw 一步式工具
 
-这些工具是 0.5.8 的推荐入口：
+这些工具是 0.5.9 的推荐入口：
 
 - `jdy_openclaw_doctor`：检查安装配置、私有域名、只读连通性和西北公司预设完整性。
 - `jdy_northwest_refresh_schema`：刷新西北公司应用/表单/字段缓存。
 - `jdy_northwest_schema_status`：查看缓存路径、生成时间、应用数、表单数、字段数。
 - `jdy_northwest_clear_schema_cache`：清理本地 schema 缓存。
 - `jdy_northwest_get_form_context`：按业务关键词找到西北公司应用/表单，并返回字段。
-- `jdy_northwest_read_records`：按业务关键词找到表单，解析中文字段名并查询数据。
+- `jdy_northwest_read_records`：按业务关键词找到表单，解析中文字段名并查询数据；支持 `date_text`、日期字段过滤和多候选表单扫描，适合 WorkShadow/OpenClaw 查询“昨天/今天/某天”的工作日志。
 - `jdy_northwest_create_record`：按业务关键词找到表单，解析中文字段名并新增记录。
 - `jdy_northwest_update_record`：按业务关键词找到表单，解析中文字段名并更新记录。
 
 ### 写入保护和提交人
 
-0.5.8 对 `jdy_northwest_create_record`、`jdy_northwest_update_record`、`jdy_assistant_create_record`、`jdy_assistant_update_record` 增加写入保护，并把 `jdy_data_create`、`jdy_data_batch_create`、面向创建接口的 `jdy_raw_post` 纳入提交人锁定策略：
+0.5.9 对 `jdy_northwest_create_record`、`jdy_northwest_update_record`、`jdy_assistant_create_record`、`jdy_assistant_update_record` 保留写入保护，并把 `jdy_data_create`、`jdy_data_batch_create`、面向创建接口的 `jdy_raw_post` 纳入提交人锁定策略：
 
 - 默认 `omit_empty_fields=true`：`null`、空字符串、空数组、空对象不会被提交。
 - 默认 `reject_unresolved_fields=true`：无法解析成简道云字段的中文字段名会被拒绝，不会原样写入。
@@ -123,6 +123,7 @@ export JIANDAOYUN_ROOT_DEPT_NO=1
 export JIANDAOYUN_WEACT_IDENTITY_LOOKUP=auto
 export JIANDAOYUN_WEACT_CLI_BIN=weact-cli
 export JIANDAOYUN_WEACT_CLI_AUTH=bot
+export JIANDAOYUN_WEACT_CREATOR_FIELD=user_id
 ```
 
 锁定模式下，工具会忽略用户或模型传入的 `data_creator`、`initiator_username` 和显示名兜底，提交人按以下顺序解析：
@@ -131,7 +132,7 @@ export JIANDAOYUN_WEACT_CLI_AUTH=bot
 2. 如果直接映射缺失，并且 `JIANDAOYUN_WEACT_IDENTITY_LOOKUP=auto`，调用 `weact-cli contact +get-user --user-id <open_id> --as bot --format json` 查询发起人身份。
 3. 使用查询到的唯一字段（例如 `open_id`、`user_id`、`employee_no`、`email`、`enterprise_email`）再去 `JIANDAOYUN_USER_MAP_FILE` 查映射。
 4. 如果映射仍缺失，继续用 WeACT 身份中的邮箱、工号、姓名等字段去简道云通讯录做唯一匹配，匹配成功后把简道云 `username` 写入 `data_creator`。
-5. 只有管理员显式设置 `JIANDAOYUN_WEACT_CREATOR_FIELD` 时，才会把该 WeACT 身份字段直接作为简道云 `data_creator`。例如 `JIANDAOYUN_WEACT_CREATOR_FIELD=name` 只适合 WeACT 姓名等于唯一简道云 username 的场景。
+5. 只有管理员显式设置 `JIANDAOYUN_WEACT_CREATOR_FIELD` 时，才会把该 WeACT 身份字段直接作为简道云 `data_creator`。当前管网 WeACT 场景优先使用 `JIANDAOYUN_WEACT_CREATOR_FIELD=user_id`；前提是 WeACT `user_id` 与简道云 `username` 一致。映射文件仍建议保留，作为少数异常用户的兜底。
 
 映射文件示例：
 
@@ -182,7 +183,11 @@ export JIANDAOYUN_REQUIRED_FIELDS_FILE="$HOME/.openclaw-main/jiandaoyun-required
   "arguments": {
     "app_query": "中卫",
     "form_query": "工作日志",
+    "date_text": "昨天",
+    "date_field_labels": ["填报日期", "日期", "提交日期"],
     "field_labels": ["工作内容", "负责人", "完成情况"],
+    "candidate_limit": 8,
+    "scan_limit": 500,
     "limit": 20
   }
 }

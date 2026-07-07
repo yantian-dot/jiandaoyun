@@ -68,12 +68,13 @@ The server installer does this automatically.
 - Do not use a browser dashboard URL as `JIANDAOYUN_BASE_URL`; use only the origin or API path prefix.
 - There is no code-level dangerous-tool guard in this package. If the platform supports human confirmation, show the target app/form, record IDs, and request body before delete, batch delete, workflow approve/reject/rollback, department import, member management, role management, or `jdy_raw_post`.
 - For write operations, summarize the target app/form, resolved fields, and data body before execution when the platform supports human confirmation.
+- For work-log queries such as “中卫维抢修中心昨天的工作日志”, call `jdy_northwest_read_records` with `date_text`, usually `app_query: "中卫"` and `form_query: "工作日志"`. Use `date_field_labels`, `candidate_limit`, and `scan_limit` when multiple matching forms exist or historical rows are mixed with current rows.
 - For create/update operations, do not include fields that the user did not explicitly provide. Leave omitted fields absent instead of sending blank values.
 - If the tool reports missing required fields, ask the user for those fields before writing. Do not guess required values.
 - If a form has business-required fields that the API does not mark as required, pass them through `required_fields` or configure `JIANDAOYUN_REQUIRED_FIELDS_FILE`.
 - For `机械队发电统计`, do not create a record until at least `启机原因`, `作业位置`, `启动设备`, and `开始时间` are known. If the running form also marks `作业详情` as required, ask for it before calling a create tool.
 - To intentionally clear a field, use `clear_fields`; do not send an empty string as an implicit clear operation.
-- For WeACT chats, pass the real message SenderId as `sender_open_id` or `initiator_open_id` so the plugin can resolve Jiandaoyun `data_creator` through `JIANDAOYUN_USER_MAP_FILE`. Version 0.5.5 may call `weact-cli contact +get-user` to map employee number or email when direct open_id mapping is absent. In locked creator mode, do not pass `data_creator`, `initiator_username`, or display-name aliases as submitter evidence. If no SenderId/open_id or WeACT identity mapping is known, stop before writing and ask for runtime mapping configuration.
+- For WeACT chats, pass the real message SenderId as `sender_open_id` or `initiator_open_id` so the plugin can resolve Jiandaoyun `data_creator`. Version 0.5.9 may call `weact-cli contact +get-user` to map `user_id`, employee number, or email when direct open_id mapping is absent. In the current PipeChina setup, `JIANDAOYUN_WEACT_CREATOR_FIELD=user_id` is the recommended automatic submitter path, with `JIANDAOYUN_USER_MAP_FILE` kept as an exception fallback. In locked creator mode, do not pass `data_creator`, `initiator_username`, or display-name aliases as submitter evidence. If no SenderId/open_id or WeACT identity mapping is known, stop before writing and ask for runtime mapping configuration.
 
 ## Common Intents
 
@@ -84,5 +85,6 @@ The server installer does this automatically.
 - "找西北公司的工作日志表": call `jdy_northwest_get_form_context`.
 - "这个表有哪些字段": call `jdy_northwest_get_form_context` with `include_widgets: true`.
 - "按字段名查西北公司记录": call `jdy_northwest_read_records` with `field_labels`.
+- "查中卫昨天工作日志": call `jdy_northwest_read_records` with `app_query: "中卫"`, `form_query: "工作日志"`, `date_text: "昨天"`, `candidate_limit: 8`, and `scan_limit: 500`.
 - "在西北公司新增一条记录": call `jdy_northwest_create_record` with `values` keyed by field labels.
 - "看我的待办": call `jdy_assistant_todo_summary`.

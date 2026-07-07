@@ -14,13 +14,13 @@ It is not a full OpenClaw channel plugin. It keeps the verified MCP server as th
 Install the package first:
 
 ```bash
-npm install -g ./jiandaoyun-mcp-plugin-0.5.5.tgz
+npm install -g ./jiandaoyun-mcp-plugin-0.5.9.tgz
 ```
 
 Or use the helper script from the unpacked project directory:
 
 ```bash
-./scripts/install-openclaw.sh ./jiandaoyun-mcp-plugin-0.5.5.tgz
+./scripts/install-openclaw.sh ./jiandaoyun-mcp-plugin-0.5.9.tgz
 ```
 
 Then add the MCP server in OpenClaw:
@@ -71,7 +71,7 @@ Examples:
 - "刷新西北公司表单字段缓存"
 - "查看西北公司缓存状态"
 - "找中卫工作日志表并列出字段"
-- "查中卫工作日志最近 20 条，只看工作内容、负责人、完成情况"
+- "查中卫工作日志昨天记录，只看工作内容、负责人、完成情况"
 - "在中卫工作日志新增一条：工作内容为完成站场巡检，负责人张三，完成情况已完成"
 
 ## Northwest Company Preset
@@ -98,4 +98,5 @@ Examples:
 - Use raw `jdy_data_*` tools only when exact field IDs and API bodies are already known.
 - Use delete, workflow approval, department import, and contact management tools only after explicit user confirmation.
 - For writes, do not send blank values for fields the user did not mention. If required fields are missing, ask a follow-up question before creating the record.
-- To make the Jiandaoyun submitter equal the WeACT requester, keep `JIANDAOYUN_CREATOR_POLICY=locked`, pass the real SenderId/open_id through `sender_open_id` or `initiator_open_id`, and configure `JIANDAOYUN_USER_MAP_FILE`. Version 0.5.5 can use `weact-cli contact +get-user` to resolve unique identity fields such as employee number or email when the direct open_id map is missing. Do not use display names as locked-mode submitter evidence unless `JIANDAOYUN_WEACT_CREATOR_FIELD=name` is explicitly configured and names are guaranteed unique Jiandaoyun usernames.
+- For dated work-log queries, pass `date_text` to `jdy_northwest_read_records`; use `candidate_limit` and `scan_limit` when multiple matching forms exist.
+- To make the Jiandaoyun submitter equal the WeACT requester, keep `JIANDAOYUN_CREATOR_POLICY=locked`, pass the real SenderId/open_id through `sender_open_id` or `initiator_open_id`, and keep `JIANDAOYUN_USER_MAP_FILE` as an exception fallback. Version 0.5.9 can use `weact-cli contact +get-user` and `JIANDAOYUN_WEACT_CREATOR_FIELD=user_id` to resolve the submitter when WeACT `user_id` equals Jiandaoyun `username`. Do not use display names as locked-mode submitter evidence unless names are guaranteed unique Jiandaoyun usernames.

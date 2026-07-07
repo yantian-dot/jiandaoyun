@@ -3,13 +3,13 @@
 ## 1. 安装包
 
 ```bash
-npm install -g ./jiandaoyun-mcp-plugin-0.5.8.tgz
+npm install -g ./jiandaoyun-mcp-plugin-0.5.9.tgz
 ```
 
 也可以使用辅助脚本：
 
 ```bash
-./scripts/install-openclaw.sh ./jiandaoyun-mcp-plugin-0.5.8.tgz
+./scripts/install-openclaw.sh ./jiandaoyun-mcp-plugin-0.5.9.tgz
 ```
 
 ## 2. 添加到 OpenClaw
@@ -32,6 +32,7 @@ export JIANDAOYUN_ROOT_DEPT_NO=1
 export JIANDAOYUN_WEACT_IDENTITY_LOOKUP=auto
 export JIANDAOYUN_WEACT_CLI_BIN=weact-cli
 export JIANDAOYUN_WEACT_CLI_AUTH=bot
+export JIANDAOYUN_WEACT_CREATOR_FIELD=user_id
 ```
 
 映射文件内容示例：
@@ -47,7 +48,7 @@ export JIANDAOYUN_WEACT_CLI_AUTH=bot
 }
 ```
 
-锁定模式优先使用 `ou_xxx` 直接映射。直接映射缺失时，`0.5.8` 会尝试调用 `weact-cli contact +get-user --user-id <open_id> --as bot --format json`，再用返回的 `open_id`、`user_id`、`employee_no`、`email`、`enterprise_email` 等唯一字段查映射；如果仍缺失，会继续用 WeACT 身份中的邮箱、工号、姓名去简道云通讯录唯一匹配，并将匹配到的简道云 `username` 作为提交人。只有确认 WeACT 姓名就是唯一简道云 username 时，才设置 `JIANDAOYUN_WEACT_CREATOR_FIELD=name`。0.5.8 同时会把自然语言中的人员姓名解析为简道云 `user` / `usergroup` 字段所需的成员对象；同名或查不到时会拒绝写入。0.5.8 还会识别 OpenClaw runtime 常见的 `_meta.senderOpenId` / `_meta.userOpenId` 等 camelCase 发起人字段。
+锁定模式优先使用 `ou_xxx` 直接映射。直接映射缺失时，`0.5.9` 会尝试调用 `weact-cli contact +get-user --user-id <open_id> --as bot --format json`，再用返回的 `open_id`、`user_id`、`employee_no`、`email`、`enterprise_email` 等唯一字段查映射；如果仍缺失，会继续用 WeACT 身份中的邮箱、工号、姓名去简道云通讯录唯一匹配，并将匹配到的简道云 `username` 作为提交人。当前管网 WeACT 场景推荐 `JIANDAOYUN_WEACT_CREATOR_FIELD=user_id`，前提是 WeACT `user_id` 与简道云 `username` 一致；映射文件保留为异常用户兜底。0.5.9 同时会把自然语言中的人员姓名解析为简道云 `user` / `usergroup` 字段所需的成员对象；同名或查不到时会拒绝写入。0.5.9 还会识别 OpenClaw/WorkShadow runtime 常见的 `_meta.senderOpenId` / `_meta.userOpenId` 等 camelCase 发起人字段。
 
 不要把浏览器里的 `dashboard#/app/...` 地址填到 `JIANDAOYUN_BASE_URL`。
 
@@ -114,7 +115,7 @@ jdy_northwest_schema_status
 - 检查简道云 OpenClaw 插件状态
 - 刷新西北公司表单字段缓存
 - 找中卫工作日志表并列出字段
-- 查中卫工作日志最近 20 条，只看工作内容、负责人、完成情况
+- 查中卫工作日志昨天记录，只看工作内容、负责人、完成情况
 - 在中卫工作日志新增一条：工作内容为完成站场巡检，负责人张三，完成情况已完成
 
 ## 7. 常见问题

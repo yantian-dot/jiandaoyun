@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { assistantTools } from "../dist/assistant-tools.js";
+import { northwestTools } from "../dist/northwest-tools.js";
 import { tools } from "../dist/tools.js";
 import { chmodSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
@@ -12,6 +13,10 @@ if (!createTool) {
 const rawCreateTool = tools.find((tool) => tool.name === "jdy_data_create");
 if (!rawCreateTool) {
   throw new Error("jdy_data_create not found");
+}
+const northwestReadTool = northwestTools.find((tool) => tool.name === "jdy_northwest_read_records");
+if (!northwestReadTool) {
+  throw new Error("jdy_northwest_read_records not found");
 }
 
 const previous = {
@@ -157,6 +162,65 @@ printf '%s\\n' '{"user":{"open_id":"ou_auto","name":"邢宇嘉"}}'
   if (contactCreateCall.body.data_creator !== "xjy") {
     throw new Error(`expected contact-based creator xjy, got ${contactCreateCall.body.data_creator ?? "undefined"}`);
   }
+
+  const yesterday = shanghaiDateOnly(new Date(Date.now() - 24 * 60 * 60 * 1000));
+  const oldDate = "2025-07-28";
+  const readCalls = [];
+  const readClient = {
+    async post(path, body) {
+      readCalls.push({ path, body });
+      if (path.endsWith("/entry/list")) {
+        return {
+          entries: [
+            { entry_id: "entry_old", name: "中卫维抢修中心工作日志旧表" },
+            { entry_id: "entry_live", name: "中卫维抢修中心工作日志" }
+          ]
+        };
+      }
+      if (path.endsWith("/widget/list")) {
+        return {
+          widgets: [
+            { name: "_widget_date", label: "填报日期", type: "datetime" },
+            { name: "_widget_team", label: "所属区队", type: "text" },
+            { name: "_widget_work", label: "今日工作内容", type: "textarea" }
+          ]
+        };
+      }
+      if (path.endsWith("/data/list")) {
+        if (body.entry_id === "entry_old") {
+          return {
+            data: [
+              { data_id: "old_1", data: { _widget_date: { value: oldDate }, _widget_work: { value: "旧记录" } } }
+            ]
+          };
+        }
+        if (body.entry_id === "entry_live") {
+          return {
+            data: [
+              { data_id: "live_old", data: { _widget_date: { value: oldDate }, _widget_work: { value: "不应命中" } } },
+              { data_id: "live_target", data: { _widget_date: { value: yesterday }, _widget_team: { value: "抢修队" }, _widget_work: { value: "目标记录" } } }
+            ]
+          };
+        }
+      }
+      throw new Error(`unexpected read API path: ${path}`);
+    }
+  };
+  const datedRead = await northwestReadTool.handler({
+    app_id: "669501b6c47c535dfe561619",
+    form_query: "工作日志",
+    date_text: "昨天",
+    field_labels: ["填报日期", "所属区队", "今日工作内容"],
+    candidate_limit: 2,
+    limit: 5
+  }, readClient);
+  if (datedRead.count !== 1 || datedRead.records[0]?.data?._widget_work?.value !== "目标记录") {
+    throw new Error(`expected date-filtered read to keep only the live target record, got ${JSON.stringify(datedRead)}`);
+  }
+  if (datedRead.candidates_inspected !== 2) {
+    throw new Error(`expected date-filtered read to inspect 2 candidates, got ${datedRead.candidates_inspected}`);
+  }
+
   rmSync(tempDir, { recursive: true, force: true });
   tempDir = undefined;
 
@@ -169,7 +233,9 @@ printf '%s\\n' '{"user":{"open_id":"ou_auto","name":"邢宇嘉"}}'
       "usergroup display names resolve to Jiandaoyun usernames",
       "core create ignores manual data_creator under locked policy",
       "unmapped sender can resolve via weact-cli identity and unique-field map",
-      "weact-cli display name can resolve data_creator through Jiandaoyun contacts"
+      "weact-cli display name can resolve data_creator through Jiandaoyun contacts",
+      "northwest read records filters by date_text and scans candidate forms",
+      "MCP server recognizes _meta senderOpenId metadata keys for locked creator resolution"
     ]
   }, null, 2));
 } finally {
@@ -186,4 +252,15 @@ printf '%s\\n' '{"user":{"open_id":"ou_auto","name":"邢宇嘉"}}'
   if (previous.creatorField === undefined) delete process.env.JIANDAOYUN_WEACT_CREATOR_FIELD;
   else process.env.JIANDAOYUN_WEACT_CREATOR_FIELD = previous.creatorField;
   if (tempDir) rmSync(tempDir, { recursive: true, force: true });
+}
+
+function shanghaiDateOnly(date) {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Shanghai",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit"
+  }).formatToParts(date);
+  const map = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+  return `${map.year}-${map.month}-${map.day}`;
 }

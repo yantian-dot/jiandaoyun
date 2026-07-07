@@ -1,6 +1,6 @@
 {
   "name": "jiandaoyun-mcp-plugin",
-  "version": "0.5.8",
+  "version": "0.5.9",
   "description": "OpenClaw-oriented Jiandaoyun MCP plugin with northwest-company tools, schema cache, and install helpers.",
   "type": "module",
   "bin": {

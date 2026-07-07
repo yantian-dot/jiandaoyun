@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-PACKAGE_TGZ="${1:-./jiandaoyun-mcp-plugin-0.5.8.tgz}"
+PACKAGE_TGZ="${1:-./jiandaoyun-mcp-plugin-0.5.9.tgz}"
 
 echo "== Jiandaoyun OpenClaw installer helper =="
 

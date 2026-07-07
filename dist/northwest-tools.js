@@ -98,31 +98,17 @@ export const northwestTools = [
             field_labels: stringArray("Field labels/display names to resolve through widget list."),
             filter: objectSchema("Jiandaoyun data filter object."),
             data_id: stringSchema("Pagination cursor. Use previous result's last data ID."),
+            date_text: stringSchema("Optional natural-language date text, for example 今天, 昨天, 2026-07-03. When provided, the tool scans records and keeps only matching Shanghai-date rows."),
+            date_field_labels: stringArray("Optional date field labels used for date filtering. Defaults to 填报日期/工作日期/日期/提交日期/创建时间/更新时间."),
+            sort_field_labels: stringArray("Optional field labels used for date sorting. Defaults to the date field labels."),
+            sort_order: stringSchema("Optional sort order: asc or desc. Work-log/date queries default to desc."),
+            scan_limit: numberSchema("Maximum records to scan before date filtering/sorting. Defaults to 500 for date queries, otherwise max(100, limit)."),
+            candidate_limit: numberSchema("Maximum matched forms to inspect when date_text is provided. Defaults to 8."),
             limit: numberSchema("Number of records to return, usually 1-100."),
             allow_first_match: booleanSchema("Use the first matched form when multiple forms match. Defaults to false.")
         }, ["form_query"]),
         handler: async (input, client) => {
-            const resolved = await resolveSingleNorthwestForm(client, input);
-            const fields = readStringArray(input.fields, "fields");
-            const labels = readStringArray(input.field_labels, "field_labels");
-            const fieldResolution = labels.length > 0 ? resolveFieldNames(resolved.widgets, labels) : emptyFieldResolution();
-            const allFields = uniqueStrings([...fields, ...fieldResolution.fields]);
-            const body = compactObject({
-                app_id: resolved.app.app_id,
-                entry_id: resolved.entryId,
-                data_id: optionalString(input.data_id, "data_id"),
-                fields: allFields.length > 0 ? allFields : undefined,
-                filter: input.filter === undefined ? undefined : asObject(input.filter, "filter"),
-                limit: input.limit === undefined ? undefined : boundedPositiveInt(input.limit, 100, 1, 100)
-            });
-            const result = await client.post("/api/v5/app/entry/data/list", body);
-            return {
-                ok: true,
-                form: formatResolvedForm(resolved),
-                resolved_fields: fieldResolution,
-                request: body,
-                result
-            };
+            return readNorthwestRecords(client, input);
         }
     },
     {
@@ -232,6 +218,294 @@ async function resolveSingleNorthwestForm(client, input) {
         throw new Error(`Multiple northwest-company forms matched. Narrow app_query/form_query or set allow_first_match=true. Candidates: ${summarizeCandidates(context.matches)}`);
     }
     return context.matches[0];
+}
+async function resolveNorthwestFormCandidates(client, input, dateFilter) {
+    const allowFirstMatch = input.allow_first_match === true;
+    const maxResults = dateFilter
+        ? boundedPositiveInt(input.candidate_limit, 8, 1, 20)
+        : allowFirstMatch ? 1 : 10;
+    const context = await findNorthwestForms(client, input, {
+        includeWidgets: true,
+        requireFormQuery: true,
+        maxResults
+    });
+    if (context.matches.length === 0) {
+        throw new Error(`No northwest-company form matched ${JSON.stringify(context.query)}.`);
+    }
+    if (context.matches.length > 1 && !allowFirstMatch && !dateFilter) {
+        throw new Error(`Multiple northwest-company forms matched. Narrow app_query/form_query or set allow_first_match=true. Candidates: ${summarizeCandidates(context.matches)}`);
+    }
+    return context.matches;
+}
+async function readNorthwestRecords(client, input) {
+    const dateFilter = resolveDateFilter(input);
+    const candidates = await resolveNorthwestFormCandidates(client, input, dateFilter);
+    const attempts = [];
+    for (const candidate of candidates) {
+        const result = await readRecordsFromResolvedForm(client, candidate, input, dateFilter);
+        attempts.push({
+            form: result.form,
+            count: result.count,
+            scanned_count: result.scanned_count,
+            date_filter: result.date_filter
+        });
+        if (!dateFilter || result.count > 0) {
+            return {
+                ...result,
+                candidate_count: candidates.length,
+                candidates_inspected: attempts.length,
+                candidate_attempts: attempts
+            };
+        }
+    }
+    const fallback = await readRecordsFromResolvedForm(client, candidates[0], input, dateFilter);
+    return {
+        ...fallback,
+        records: [],
+        count: 0,
+        candidate_count: candidates.length,
+        candidates_inspected: attempts.length,
+        candidate_attempts: attempts
+    };
+}
+async function readRecordsFromResolvedForm(client, resolved, input, dateFilter) {
+    const fields = readStringArray(input.fields, "fields");
+    const labels = readStringArray(input.field_labels, "field_labels");
+    const fieldResolution = labels.length > 0 ? resolveFieldNames(resolved.widgets, labels) : emptyFieldResolution();
+    const dateFieldResolution = dateFilter ? resolveFieldNames(resolved.widgets, defaultDateFieldLabels(input)) : emptyFieldResolution();
+    const shouldSort = optionalString(input.sort_order, "sort_order") || dateFilter || looksLikeWorklogQuery(input);
+    const sortOrder = normalizeSortOrder(input.sort_order, shouldSort);
+    const sortFieldResolution = sortOrder ? resolveFieldNames(resolved.widgets, defaultSortFieldLabels(input)) : emptyFieldResolution();
+    const requestedLimit = boundedPositiveInt(input.limit, 100, 1, 100);
+    const scanLimit = boundedPositiveInt(input.scan_limit, dateFilter ? 500 : Math.max(100, requestedLimit), requestedLimit, 500);
+    const allFields = uniqueStrings([
+        ...fields,
+        ...fieldResolution.fields,
+        ...dateFieldResolution.fields,
+        ...sortFieldResolution.fields
+    ]);
+    const body = compactObject({
+        app_id: resolved.app.app_id,
+        entry_id: resolved.entryId,
+        data_id: optionalString(input.data_id, "data_id"),
+        fields: allFields.length > 0 ? allFields : undefined,
+        filter: input.filter === undefined ? undefined : asObject(input.filter, "filter"),
+        limit: Math.min(100, scanLimit)
+    });
+    const fetched = await fetchRecordPages(client, body, scanLimit);
+    const dateFiltered = filterRecordsByDate(fetched.records, dateFilter, dateFieldResolution.fields);
+    const sorted = sortRecords(dateFiltered.records, sortFieldResolution.fields, sortOrder);
+    const records = sorted.slice(0, requestedLimit);
+    return {
+        ok: true,
+        form: formatResolvedForm(resolved),
+        resolved_fields: fieldResolution,
+        resolved_date_fields: dateFieldResolution,
+        resolved_sort_fields: sortFieldResolution,
+        request: body,
+        scan_limit: scanLimit,
+        scanned_count: fetched.records.length,
+        date_filter: dateFiltered.meta,
+        sort_order: sortOrder,
+        count: records.length,
+        records,
+        result_meta: fetched.resultMeta,
+        result: {
+            data: records,
+            count: records.length,
+            result_meta: fetched.resultMeta
+        }
+    };
+}
+async function fetchRecordPages(client, body, scanLimit) {
+    const records = [];
+    let cursor = optionalString(body.data_id, "data_id");
+    let resultMeta = {};
+    while (records.length < scanLimit) {
+        const pageBody = compactObject({
+            ...body,
+            data_id: cursor || undefined,
+            limit: Math.min(Number(body.limit || 100), scanLimit - records.length)
+        });
+        const result = await client.post("/api/v5/app/entry/data/list", pageBody);
+        const page = extractItems(result);
+        records.push(...page);
+        resultMeta = resultMetaFromPage(result);
+        cursor = resultMeta.next_data_id || "";
+        if (page.length === 0 || !resultMeta.has_more || !cursor)
+            break;
+    }
+    return { records, resultMeta };
+}
+function resultMetaFromPage(result) {
+    if (!isObject(result))
+        return { keys: [] };
+    const next = readString(result.next_data_id) ?? readString(result.nextDataId) ?? readString(result.next_id);
+    return {
+        keys: Object.keys(result).slice(0, 20),
+        has_more: Boolean(result.has_more || result.hasMore || next),
+        next_data_id: next
+    };
+}
+function defaultDateFieldLabels(input) {
+    const labels = readStringArray(input.date_field_labels, "date_field_labels");
+    return labels.length > 0 ? labels : ["填报日期", "工作日期", "日期", "提交日期", "创建时间", "更新时间"];
+}
+function defaultSortFieldLabels(input) {
+    const labels = readStringArray(input.sort_field_labels, "sort_field_labels");
+    return labels.length > 0 ? labels : defaultDateFieldLabels(input);
+}
+function looksLikeWorklogQuery(input) {
+    const text = `${input.app_query ?? ""} ${input.form_query ?? ""} ${input.business_query ?? ""}`;
+    return /日志|工作记录|工作日报|维抢修|抢修|管焊|封堵/.test(text);
+}
+function normalizeSortOrder(value, shouldSort) {
+    if (value === undefined || value === null)
+        return shouldSort ? "desc" : "";
+    const order = optionalString(value, "sort_order").toLowerCase();
+    if (order === "asc" || order === "desc")
+        return order;
+    throw new Error("Expected sort_order to be asc or desc.");
+}
+function resolveDateFilter(input) {
+    const text = optionalString(input.date_text, "date_text");
+    if (!text)
+        return null;
+    const targetDate = resolveShanghaiDateOnly(text);
+    if (!targetDate) {
+        throw new Error(`无法解析日期文本：${text}`);
+    }
+    return { date_text: text, target_date: targetDate };
+}
+function resolveShanghaiDateOnly(text) {
+    const raw = String(text || "").trim();
+    if (!raw)
+        return "";
+    const now = new Date();
+    if (/^今天$|今日/.test(raw))
+        return shanghaiDateOnly(now);
+    if (/^昨天$|昨日/.test(raw))
+        return shanghaiDateOnly(addDays(now, -1));
+    if (/^前天$/.test(raw))
+        return shanghaiDateOnly(addDays(now, -2));
+    if (/^明天$|明日/.test(raw))
+        return shanghaiDateOnly(addDays(now, 1));
+    const cn = raw.match(/(\d{4})年(\d{1,2})月(\d{1,2})日?/);
+    if (cn)
+        return `${cn[1]}-${String(cn[2]).padStart(2, "0")}-${String(cn[3]).padStart(2, "0")}`;
+    const ymd = raw.match(/(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})/);
+    if (ymd)
+        return `${ymd[1]}-${String(ymd[2]).padStart(2, "0")}-${String(ymd[3]).padStart(2, "0")}`;
+    return parseDateOnly(raw);
+}
+function addDays(date, days) {
+    return new Date(date.getTime() + days * 24 * 60 * 60 * 1000);
+}
+function shanghaiDateOnly(date) {
+    const parts = new Intl.DateTimeFormat("en-CA", {
+        timeZone: "Asia/Shanghai",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit"
+    }).formatToParts(date);
+    const map = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+    return `${map.year}-${map.month}-${map.day}`;
+}
+function filterRecordsByDate(records, dateFilter, fieldIds) {
+    if (!dateFilter) {
+        return { records, meta: null };
+    }
+    const matched = records.filter((record) => recordDateOnly(record, fieldIds) === dateFilter.target_date);
+    return {
+        records: matched,
+        meta: {
+            date_text: dateFilter.date_text,
+            target_date: dateFilter.target_date,
+            date_fields: fieldIds,
+            scanned_count: records.length,
+            matched_count: matched.length
+        }
+    };
+}
+function sortRecords(records, fieldIds, sortOrder) {
+    if (!sortOrder || fieldIds.length === 0)
+        return records;
+    const direction = sortOrder === "asc" ? 1 : -1;
+    return [...records].sort((a, b) => {
+        const av = recordDateOnly(a, fieldIds);
+        const bv = recordDateOnly(b, fieldIds);
+        if (!av && !bv)
+            return 0;
+        if (!av)
+            return 1;
+        if (!bv)
+            return -1;
+        return av.localeCompare(bv) * direction;
+    });
+}
+function recordDateOnly(record, fieldIds) {
+    for (const fieldId of fieldIds) {
+        const parsed = parseDateOnly(fieldValueText(record, fieldId));
+        if (parsed)
+            return parsed;
+    }
+    return parseDateOnly(unwrapFieldValue(recordFields(record)));
+}
+function fieldValueText(record, fieldId) {
+    const fields = recordFields(record);
+    if (fields[fieldId] !== undefined)
+        return unwrapFieldValue(fields[fieldId]);
+    if (record && record[fieldId] !== undefined)
+        return unwrapFieldValue(record[fieldId]);
+    return "";
+}
+function recordFields(record) {
+    if (!isObject(record))
+        return {};
+    if (isObject(record.data))
+        return record.data;
+    if (isObject(record.fields))
+        return record.fields;
+    if (isObject(record.record))
+        return record.record;
+    return record;
+}
+function unwrapFieldValue(value, seen = new Set()) {
+    if (value === null || value === undefined)
+        return "";
+    if (typeof value === "string" || typeof value === "number" || typeof value === "boolean")
+        return String(value);
+    if (Array.isArray(value))
+        return value.map((item) => unwrapFieldValue(item, seen)).filter(Boolean).join("，");
+    if (!isObject(value) || seen.has(value))
+        return "";
+    seen.add(value);
+    for (const key of ["value", "text", "name", "title", "label"]) {
+        if (value[key] !== undefined && value[key] !== null) {
+            const unwrapped = unwrapFieldValue(value[key], seen);
+            if (unwrapped)
+                return unwrapped;
+        }
+    }
+    return Object.values(value).map((item) => unwrapFieldValue(item, seen)).filter(Boolean).join("，");
+}
+function parseDateOnly(value) {
+    if (value === null || value === undefined || value === "")
+        return "";
+    if (typeof value === "number" && Number.isFinite(value)) {
+        const ms = value > 10000000000 ? value : value * 1000;
+        const date = new Date(ms);
+        return Number.isNaN(date.getTime()) ? "" : shanghaiDateOnly(date);
+    }
+    const raw = String(value).trim();
+    const cn = raw.match(/(\d{4})年(\d{1,2})月(\d{1,2})日?/);
+    if (cn)
+        return `${cn[1]}-${String(cn[2]).padStart(2, "0")}-${String(cn[3]).padStart(2, "0")}`;
+    const ymd = raw.match(/(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})/);
+    if (ymd)
+        return `${ymd[1]}-${String(ymd[2]).padStart(2, "0")}-${String(ymd[3]).padStart(2, "0")}`;
+    const date = new Date(raw);
+    return Number.isNaN(date.getTime()) ? "" : shanghaiDateOnly(date);
 }
 async function findNorthwestForms(client, input, options) {
     const appId = optionalString(input.app_id, "app_id");
